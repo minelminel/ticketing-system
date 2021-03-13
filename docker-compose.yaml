@@ -1,0 +1,63 @@
+## $ docker-compose up --build
+## $ docker-compose down --remove-orphans
+version: "2.1"
+services:
+  ui:
+    build:
+      context: ./ui
+      dockerfile: Dockerfile.dev
+    image: ticketing-system-ui
+    ports:
+      - 3000:3000
+    volumes:
+      - "./ui:/src/"
+    labels:
+      app: "ticketing-system"
+      description: "Jira clone"
+    healthcheck:
+      test: "curl localhost:3000"
+      interval: 3s
+      timeout: 5s
+      retries: 5
+    depends_on:
+      - api
+    environment:
+      CHOKIDAR_USEPOLLING: "true"
+    networks:
+      - default
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile.dev
+    image: ticketing-system-api
+    ports:
+      - 5000:5000
+    volumes:
+      - "./api:/src/" # enable hot reload
+    labels:
+      app: "ticketing-system"
+      description: "Jira clone"
+    # healthcheck:
+    #   test: "curl localhost:5000/api/v1/healthcheck"
+    #   interval: 3s
+    #   timeout: 5s
+    #   retries: 5
+    networks:
+      - default
+  proxy:
+    build:
+      context: ./proxy
+      dockerfile: Dockerfile.dev
+    image: ticketing-system-proxy
+    ports:
+      - 8888:80
+    depends_on:
+      - ui
+      - api
+    labels:
+      app: "ticketing-system"
+      description: "Jira clone"
+    networks:
+      - default
+networks:
+  default:

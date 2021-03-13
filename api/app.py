@@ -1,19 +1,21 @@
 """
 TODO:
-- convert issue.issue_type to Enum
-- add issue_is_closed Boolean field
+- convert model columns to Enum where applicable
+- add configs: local,docker,test,production
+- create blueprints for issues,activity,auth
 """
 import os, json, datetime
-from flask import Flask, Blueprint, current_app, request, jsonify, render_template, url_for
+from flask import Flask, Blueprint, current_app, request, jsonify, render_template, url_for, make_response
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.orm.exc import NoResultFound
 from flask_cors import CORS
-from marshmallow import ValidationError, fields, validates, post_load, EXCLUDE
+from marshmallow import ValidationError, fields, validates, pre_load, post_load, EXCLUDE
 from flask_marshmallow import Marshmallow
-
 
 config = {
     "SQLALCHEMY_DATABASE_URI": "sqlite:///database.db",
     "SQLALCHEMY_TRACK_MODIFICATIONS": False,
+    "FLASK_ENVIRONMENT": os.getenv("FLASK_ENVIRONMENT", "local"),
     "TS_ISSUE_NUMBER_PADDING": 4,
 }
 
@@ -24,21 +26,47 @@ CORS(app)
 db = SQLAlchemy(app)
 ma = Marshmallow(app)
 
+## OVERHEAD
+@app.errorhandler(Exception)
+def handle_exception(e):
+    return reply_error(message=str(e))
+
 
 ## UTILS
 def make_time():
     return int(datetime.datetime.now().timestamp() * 1000)
 
-def create_ticket_name(issue_project):
+def create_issue_name(issue_project):
     record = IssueSchema().dump(
         db.session.query(IssueModel)
         .filter_by(issue_project=issue_project)
-        .order_by(IssueModel.id.desc()).first()
+        .order_by(IssueModel.id.desc())
+        .first()
     )
     last_id = record.get("id", 0)
     next_id = str(last_id + 1).zfill(app.config['TS_ISSUE_NUMBER_PADDING'])
     return f"{issue_project}-{next_id}"
-    
+
+def _base_reply(data=None, message=None, status=None, response=None, timestamp=make_time()):
+    return make_response(
+        jsonify(
+            data=data,
+            message=message, 
+            response=response, 
+            status=status, 
+            timestamp=timestamp
+        ), response
+    )
+
+def reply_success(data=None, message=None):
+    return _base_reply(data, message, status="success", response=200)
+
+def reply_error(data=None, message=None):
+    return _base_reply(data, message, status="error", response=500)
+
+def reply_missing(data=None, message=None):
+    return _base_reply(data, message, status="missing", response=404)
+
 
 ## MODELS
 class BaseModel(db.Model):
@@ -51,6 +79,7 @@ class BaseModel(db.Model):
 
 class ActivityModel(BaseModel):
     __tablename__ = "activity"
+    # __table__args__ = (db.ForeignKeyConstraint(["issue_id"], ["issues.id"]))
 
     issue_id = db.Column(db.Integer(), db.ForeignKey("issues.id"), nullable=False)
     activity_type = db.Column(db.String(), nullable=False)
@@ -72,13 +101,40 @@ class IssueModel(BaseModel):
     issue_affected_version = db.Column(db.String(), nullable=True)
     issue_fixed_version = db.Column(db.String(), nullable=True)
     issue_assigned_to = db.Column(db.String(), nullable=True)
-    activity = db.relationship("ActivityModel", backref="issues", lazy=True)
+    activity = db.relationship("ActivityModel", backref="issues")
 
 
-class ActivitySchema(ma.ModelSchema):
+class BaseSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
-        model = ActivityModel
+        """Alternate method of configuration which eliminates the need to
+        subclass BaseSchema.Meta
+
+        https://marshmallow-sqlalchemy.readthedocs.io/en/latest/recipes.html#base-schema-ii
+        """
+        sqla_session = db.session
+        load_instance = True
+        transient = True
         unknown = EXCLUDE
+
+    @pre_load
+    def set_nested_session(self, data, **kwargs):
+        """Allow nested schemas to use the parent schema's session. This is a
+        longstanding bug with marshmallow-sqlalchemy.
+
+        https://github.com/marshmallow-code/marshmallow-sqlalchemy/issues/67
+        https://github.com/marshmallow-code/marshmallow/issues/658#issuecomment-328369199
+        """
+        nested_fields = {
+            k: v for k, v in self.fields.items() if type(v) == fields.Nested
+        }
+        for field in nested_fields.values():
+            field.schema.session = self.session
+        return data
+
+
+class ActivitySchema(BaseSchema):
+    class Meta(BaseSchema.Meta):
+        model = ActivityModel
 
     issue_id = fields.Int(required=True)
     issues = fields.Int(load_only=True)  # not sure about this..
@@ -91,12 +147,23 @@ class ActivitySchema(ma.ModelSchema):
         if data not in choices:
             raise ValidationError(f"Invalid activity type: {data}, must be {choices}")
 
+    @validates("issue_id")
+    def validate_issue_id(self, data, **kwargs):
+        # TODO: figure out how to do this with table constraints
+        try:
+            db.session.query(IssueModel).filter_by(id=data).one()
+        except NoResultFound:
+            raise ValidationError(f"Invalid issue id: {data}")
 
-class IssueSchema(ma.ModelSchema):
-    class Meta:
+    @post_load
+    def post_load(self, data, **kwargs):
+        # TODO: generate activity_text for non-comment updates
+        return data
+
+
+class IssueSchema(BaseSchema):
+    class Meta(BaseSchema.Meta):
         model = IssueModel
-        unknown = EXCLUDE
-        # include_relationships = True
 
     id = fields.Int(dump_only=True)
     created_at = fields.Int(dump_only=True)
@@ -142,35 +209,50 @@ class IssueSchema(ma.ModelSchema):
 
     @validates("issue_type")
     def validate_issue_type(self, data, **kwargs):
-        choices = ("bug", "feature", "requirement", "support", "epic")
+        choices = ("bug", "task", "feature", "requirement", "support", "epic")
         if data not in choices:
             raise ValidationError(f"Invalid issue type: {data}, must be {choices}")
 
     @post_load
     def post_load(self, data, **kwargs):
-        data.issue_name = create_ticket_name(data.issue_project)
+        data.issue_name = create_issue_name(data.issue_project)
         return data
 
 
 ## ROUTES
-@app.route("/api/issues")
+@app.route("/api/issues", methods=["GET"])
 def issues_route():
-    result = db.session.query(IssueModel).all()
-    response = IssueSchema(many=True).dump(result)
-    return jsonify(response)
+    # TODO: validate params
+    params = dict(request.args)
+    query = db.session.query(IssueModel)
+    if params:
+        query = query.filter_by(**params)
+    result = query.all()
+    return reply_success(data=IssueSchema(many=True).dump(result))
 
-@app.route("/api/issues/<string:issue_name>")
+@app.route("/api/issues/<string:issue_name>", methods=["GET"])
 def issue_route(issue_name):
-    # .one throws sqlalchemy.orm.exc.NoResultFound when missing
-    result = db.session.query(IssueModel).filter_by(issue_name=issue_name).first()
-    response = IssueSchema().dump(result)
-    return jsonify(response)
+    try:
+        result = db.session.query(IssueModel).filter_by(issue_name=issue_name).one()
+        return reply_success(data=IssueSchema().dump(result))
+    except NoResultFound as exc:
+        return reply_missing(message=f"Invalid issue name: {issue_name}")
 
-@app.route("/api/activity")
+@app.route("/api/activity", methods=["GET", "POST"])
 def activity_route():
-    result = db.session.query(ActivityModel).all()
-    response = ActivitySchema(many=True).dump(result)
-    return jsonify(response)
+    if request.method == "GET":
+        # TODO: validate params
+        params = dict(request.args)
+        query = db.session.query(ActivityModel)
+        if params:
+            query = query.filter_by(**params)
+        result = query.all()
+        return reply_success(data=ActivitySchema(many=True).dump(result))
+    elif request.method == "POST":
+        obj = ActivitySchema().load(request.get_json())
+        db.session.add(obj)
+        db.session.commit()
+        return reply_success(ActivitySchema().dump(obj))
 
 
 ## DRIVER

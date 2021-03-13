@@ -1,5 +1,7 @@
-import React from "react";
-import { formatTimestamp } from "../../Utils";
+import React from 'react';
+import { v4 as uuidv4 } from 'uuid';
+
+import { formatTimestamp } from '../../Utils';
 
 function SummaryPanel(props) {
   const { issue_project, issue_name, issue_summary } = props;
@@ -119,10 +121,10 @@ function ActivityPanel(props) {
     <div>
       <h3>Activity</h3>
       <ul>
-        {activity.map((a) => (
-          <li>{`${a.created_by} on ${formatTimestamp(a.created_at)} [${
-            a.activity_type
-          }]: ${a.activity_text}`}</li>
+        {activity?.map((a) => (
+          <li key={uuidv4()}>{`${a.created_by} on ${formatTimestamp(
+            a.created_at,
+          )} [${a.activity_type}]: ${a.activity_text}`}</li>
         ))}
       </ul>
     </div>

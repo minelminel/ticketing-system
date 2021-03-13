@@ -48,8 +48,21 @@
 
 ### Endpoints
 
-- `/`: login
-- `/home`: view all assigned tickets
+- `/`: homepage
 - `/issues`: browse all tickets
 - `/issues/{ticket}`: view details of a specific ticket
 - `/dashboard`: Kanban board
+
+---
+
+### UI Components
+- Single issue full-page detail view
+- Issue list item for use with dashboard with href action
+- Dashboard grid layout
+- Icons for indicating issue_type & issue_priority
+- navbar
+- auth provider/login page
+- admin panel with separate data tables for each SQL table & editing capability
+- new issue page component for creation
+- comment creation component with markdown support
+- loading spinner on all page components

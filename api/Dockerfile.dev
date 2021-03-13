@@ -1,2 +1,13 @@
-FROM python3
+FROM python
 
+RUN python3 -m pip install --upgrade pip wheel setuptools
+WORKDIR /tmp
+COPY requirements.txt .
+RUN python3 -m pip install -r requirements.txt && rm requirements.txt
+
+ENV TS_ENVIRONMENT=docker
+WORKDIR /src
+COPY . .
+EXPOSE 5000
+# should use `flask run` to avoid crash on syntax
+ENTRYPOINT python3 app.py
