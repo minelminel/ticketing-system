@@ -1,0 +1,22 @@
+[
+    {
+        "created_by": "user@example.com",
+        "issue_project": "DWB",
+        "issue_type": "bug",
+        "issue_priority": 3,
+        "issue_story_points": 2,
+        "issue_summary": "Back button is broken",
+        "issue_description": null,
+        "issue_status": "open"
+    },
+    {
+        "created_by": "user@example.com",
+        "issue_project": "DWB",
+        "issue_type": "bug",
+        "issue_priority": 3,
+        "issue_story_points": 5,
+        "issue_summary": "Support non-ASCII characters in UI",
+        "issue_description": "Turkish letters display as bordered boxes on most browsers",
+        "issue_status": "assigned"
+    }
+]

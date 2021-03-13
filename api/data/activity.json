@@ -1,0 +1,8 @@
+[
+    {
+        "issue_id": 1,
+        "created_by": "user@example.com",
+        "activity_type": "comment",
+        "activity_text": "hello world! I am leaving this comment here for someone to read later on."
+    }
+]

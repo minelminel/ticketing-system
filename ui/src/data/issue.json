@@ -1,0 +1,40 @@
+{
+  "activity": [
+    {
+      "activity_text": "hello world! I am leaving this comment here for someone to read later on.",
+      "activity_type": "comment",
+      "created_at": 1615617987192,
+      "created_by": "user@example.com",
+      "id": 1,
+      "issue": 1,
+      "issue_id": 1,
+      "updated_at": null
+    },
+    {
+      "activity_text": "user@example.com assigned this issue to developer@example.com",
+      "activity_type": "assignment",
+      "created_at": 1615617997192,
+      "created_by": "user@example.com",
+      "id": 2,
+      "issue": 1,
+      "issue_id": 1,
+      "updated_at": null
+    }
+  ],
+  "created_at": 1615617987178,
+  "created_by": "user@example.com",
+  "id": 1,
+  "issue_affected_version": null,
+  "issue_assigned_to": null,
+  "issue_description": null,
+  "issue_fixed_version": null,
+  "issue_name": "DWB-0001",
+  "issue_priority": 3,
+  "issue_project": "DWB",
+  "issue_resolution": "unresolved",
+  "issue_status": "open",
+  "issue_story_points": 2,
+  "issue_summary": "Back button is broken",
+  "issue_type": "bug",
+  "updated_at": null
+}
