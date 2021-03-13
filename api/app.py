@@ -5,7 +5,16 @@ TODO:
 - create blueprints for issues,activity,auth
 """
 import os, json, datetime
-from flask import Flask, Blueprint, current_app, request, jsonify, render_template, url_for, make_response
+from flask import (
+    Flask,
+    Blueprint,
+    current_app,
+    request,
+    jsonify,
+    render_template,
+    url_for,
+    make_response,
+)
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm.exc import NoResultFound
 from flask_cors import CORS
@@ -36,6 +45,7 @@ def handle_exception(e):
 def make_time():
     return int(datetime.datetime.now().timestamp() * 1000)
 
+
 def create_issue_name(issue_project):
     record = IssueSchema().dump(
         db.session.query(IssueModel)
@@ -44,25 +54,32 @@ def create_issue_name(issue_project):
         .first()
     )
     last_id = record.get("id", 0)
-    next_id = str(last_id + 1).zfill(app.config['TS_ISSUE_NUMBER_PADDING'])
+    next_id = str(last_id + 1).zfill(app.config["TS_ISSUE_NUMBER_PADDING"])
     return f"{issue_project}-{next_id}"
 
-def _base_reply(data=None, message=None, status=None, response=None, timestamp=make_time()):
+
+def _base_reply(
+    data=None, message=None, status=None, response=None, timestamp=make_time()
+):
     return make_response(
         jsonify(
             data=data,
-            message=message, 
-            response=response, 
-            status=status, 
-            timestamp=timestamp
-        ), response
+            message=message,
+            response=response,
+            status=status,
+            timestamp=timestamp,
+        ),
+        response,
     )
+
 
 def reply_success(data=None, message=None):
     return _base_reply(data, message, status="success", response=200)
 
+
 def reply_error(data=None, message=None):
     return _base_reply(data, message, status="error", response=500)
+
 
 def reply_missing(data=None, message=None):
     return _base_reply(data, message, status="missing", response=404)
@@ -74,7 +91,9 @@ class BaseModel(db.Model):
     id = db.Column(db.Integer(), primary_key=True, unique=True)
     created_by = db.Column(db.String(), nullable=False)
     created_at = db.Column(db.Integer(), default=make_time, nullable=False)
-    updated_at = db.Column(db.Integer(), default=None, onupdate=make_time, nullable=True)
+    updated_at = db.Column(
+        db.Integer(), default=None, onupdate=make_time, nullable=True
+    )
 
 
 class ActivityModel(BaseModel):
@@ -88,7 +107,7 @@ class ActivityModel(BaseModel):
 
 class IssueModel(BaseModel):
     __tablename__ = "issues"
-    
+
     issue_project = db.Column(db.String(), nullable=False)
     issue_name = db.Column(db.String(), nullable=False)
     issue_type = db.Column(db.String(), nullable=False)
@@ -111,6 +130,7 @@ class BaseSchema(ma.SQLAlchemyAutoSchema):
 
         https://marshmallow-sqlalchemy.readthedocs.io/en/latest/recipes.html#base-schema-ii
         """
+
         sqla_session = db.session
         load_instance = True
         transient = True
@@ -177,7 +197,9 @@ class IssueSchema(BaseSchema):
     issue_summary = fields.Str(required=True)
     issue_description = fields.Str(required=False, allow_none=True)
     issue_status = fields.Str(required=False, missing="open", default="open")
-    issue_resolution = fields.Str(required=False, missing="unresolved", default="unresolved")
+    issue_resolution = fields.Str(
+        required=False, missing="unresolved", default="unresolved"
+    )
     issue_fixed_version = fields.Str(required=False, allow_none=True)
     issue_assigned_to = fields.Str(required=False, allow_none=True)
     # one-to-many
@@ -185,27 +207,49 @@ class IssueSchema(BaseSchema):
 
     @validates("issue_resolution")
     def validate_issue_resolution(self, data, **kwargs):
-        choices = ("unresolved", "invalid", "wont_fix", "overcome_by_events", "unable_to_replicate", "duplicate", "complete")
+        choices = (
+            "unresolved",
+            "invalid",
+            "wont_fix",
+            "overcome_by_events",
+            "unable_to_replicate",
+            "duplicate",
+            "complete",
+        )
         if data not in choices:
-            raise ValidationError(f"Invalid issue resolution: {data}, must be {choices}")
+            raise ValidationError(
+                f"Invalid issue resolution: {data}, must be {choices}"
+            )
 
     @validates("issue_status")
     def validate_issue_status(self, data, **kwargs):
-        choices = ("open", "assigned", "in_progress", "on_hold", "under_review", "done", "released")
+        choices = (
+            "open",
+            "assigned",
+            "in_progress",
+            "on_hold",
+            "under_review",
+            "done",
+            "released",
+        )
         if data not in choices:
             raise ValidationError(f"Invalid issue status: {data}, must be {choices}")
 
     @validates("issue_story_points")
     def validate_issue_story_points(self, data, **kwargs):
         if data < 1:
-            raise ValidationError(f"Invalid issue story points: {data}, must be greater than 1")
+            raise ValidationError(
+                f"Invalid issue story points: {data}, must be greater than 1"
+            )
 
     @validates("issue_priority")
     def validate_issue_priority(self, data, **kwargs):
         min_pri = 1
         max_pri = 5
         if data not in range(min_pri, max_pri + 1):
-            raise ValidationError(f"Invalid issue priority: {data}, must be between {min_pri} and {max_pri}")
+            raise ValidationError(
+                f"Invalid issue priority: {data}, must be between {min_pri} and {max_pri}"
+            )
 
     @validates("issue_type")
     def validate_issue_type(self, data, **kwargs):
@@ -230,6 +274,7 @@ def issues_route():
     result = query.all()
     return reply_success(data=IssueSchema(many=True).dump(result))
 
+
 @app.route("/api/issues/<string:issue_name>", methods=["GET"])
 def issue_route(issue_name):
     try:
@@ -237,6 +282,7 @@ def issue_route(issue_name):
         return reply_success(data=IssueSchema().dump(result))
     except NoResultFound as exc:
         return reply_missing(message=f"Invalid issue name: {issue_name}")
+
 
 @app.route("/api/activity", methods=["GET", "POST"])
 def activity_route():
