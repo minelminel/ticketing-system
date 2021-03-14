@@ -69,3 +69,9 @@
 - comment creation component with markdown support
 - loading spinner on all page components
 - activity children components for each activity_type
+
+---
+
+### TODO
+- use url params in /issues table to set view (closed/open issues, pageNo, rowsPerPage)
+- generic activity component which handles all activity types

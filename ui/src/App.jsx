@@ -81,32 +81,34 @@ export default function App() {
   const IssuesRoute = (props) => {
     const match = useRouteMatch();
     return (
-      <Page>
-        <Switch>
-          <Route path={`${match.path}/:issue_name`}>
-            {/* single issue detail, does its own fetch */}
+      <Switch>
+        <Route path={`${match.path}/:issue_name`}>
+          {/* single issue detail, does its own fetch */}
+          <Page fluid={false}>
             <IssuePage />
-          </Route>
-          <Route path={match.path}>
-            {/* all issues */}
+          </Page>
+        </Route>
+        <Route path={match.path}>
+          {/* all issues */}
+          <Page>
             <IssueTable {...issues} />
-          </Route>
-        </Switch>
-      </Page>
+          </Page>
+        </Route>
+      </Switch>
     );
   };
 
   const IssuePage = () => {
     return (
       <Page>
-        <IssueDetail {...useParams()} />
+        <IssueDetail {...{ fluid: false, ...useParams() }} />
       </Page>
     );
   };
 
   return (
     <Router>
-      <Navbar bg="dark" variant="dark">
+      <Navbar bg="dark" variant="dark" className="mb-2">
         <Navbar.Brand as={Link} to="/">
           Ticketing System
         </Navbar.Brand>

@@ -20,7 +20,7 @@ export default function IssuePriorityBadge(props) {
   const { issue_priority } = props;
   return (
     <Badge
-      title={`Issue Priority`}
+      title={`Issue Priority: ${issue_priority}`}
       style={props.style}
       variant={getVariant(issue_priority)}
     >

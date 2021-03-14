@@ -6,10 +6,16 @@ except:
     print("\npip install lorem\n")
     sys.exit(1)
 
-NUMBER = 100
-FILE = "issues.json"
+here = os.path.dirname(os.path.abspath(__file__))
+data = os.path.join(os.path.dirname(here), "api", "data")
+print(f"Data folder: {data}")
 
-template = {
+NUM_ISSUES = 100
+NUM_ACTIVITY = 500
+ISSUES_FILE = os.path.join(data, "issues.json")
+ACTIVITY_FILE = os.path.join(data, "activity.json")
+
+issue_template = {
     # "activity": [],
     # "created_at": 1615704659235,
     # "id": 4,
@@ -61,8 +67,8 @@ issue_summary = lambda: lorem.sentence()
 issue_description = lambda: lorem.paragraph()
 
 issues = []
-for i in range(NUMBER):
-    issue = dict(
+for _ in range(NUM_ISSUES):
+    i = dict(
         created_by=created_by(),
         issue_affected_version=issue_affected_version(),
         issue_assigned_to=issue_assigned_to(),
@@ -76,7 +82,35 @@ for i in range(NUMBER):
         issue_summary=issue_summary(),
         issue_type=issue_type(),
     )
-    issues.append(issue)
+    issues.append(i)
 
-with open(FILE, "w") as file:
+print(f"Writing {NUM_ISSUES} items to {ISSUES_FILE}")
+with open(ISSUES_FILE, "w") as file:
     json.dump(issues, file, indent=4)
+
+# -----------------------------------------------------------------------------
+activity_template = {
+    "issue_id": 1,
+    "created_by": "user@example.com",
+    "activity_type": "comment",
+    "activity_text": "hello world! I am leaving this comment here for someone to read later on.",
+}
+
+issue_id = lambda: random.randint(1, NUM_ISSUES)
+# created_by same as before
+activity_type = lambda: "comment"
+activity_text = lambda: lorem.sentence()
+
+activity = []
+for _ in range(NUM_ACTIVITY):
+    a = dict(
+        issue_id=issue_id(),
+        created_by=created_by(),
+        activity_type=activity_type(),
+        activity_text=activity_text(),
+    )
+    activity.append(a)
+
+print(f"Writing {NUM_ACTIVITY} items to {ACTIVITY_FILE}")
+with open(ACTIVITY_FILE, "w") as file:
+    json.dump(activity, file, indent=4)

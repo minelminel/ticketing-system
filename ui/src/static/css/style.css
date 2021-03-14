@@ -2,3 +2,16 @@
     background-color: purple;
     color: white;
 }
+
+.material-icons {
+    display: inline-flex;
+    vertical-align: middle;
+    font-size: inherit;
+}
+
+.table-vertical > tbody > tr > th {
+    width: 20%;
+    /* min-width: 100px;
+    max-width: 100px; */
+    table-layout: fixed;
+}

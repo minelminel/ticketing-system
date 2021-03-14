@@ -6,6 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 import IssueItem from '../molecules/IssueItem';
 import { IssueStatusEnum } from '../../Enums';
+import { formatSnakeCase } from '../../Utils';
 
 function groupIssuesByStatus(list, key = 'issue_status') {
   const defaults = Object.fromEntries(
@@ -28,13 +29,16 @@ function groupIssuesByStatus(list, key = 'issue_status') {
 export default function Dashboard(props) {
   const { data } = props;
   const groups = groupIssuesByStatus(data, 'issue_status');
-
+  // TODO: make default props
+  delete groups.done;
+  delete groups.released;
+  delete groups.open;
   return (
     <Container fluid>
       <Row>
         {Object.entries(groups).map(([key, array]) => (
           <Col key={uuidv4()}>
-            <h3>{`${key} (${array.length})`}</h3>
+            <h3>{`${formatSnakeCase(key)} (${array.length})`}</h3>
             <hr />
             <div key={uuidv4()}>
               {array.map((issue) => (

@@ -1,18 +1,82 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
+import Icon from '@material-ui/core/Icon';
+import Toast from 'react-bootstrap/Toast';
+import Table from 'react-bootstrap/Table';
+import styled from 'styled-components';
 
 import IssueNameLink from '../atoms/IssueNameLink';
-import { formatTimestamp } from '../../Utils';
+import ActivityComment from '../atoms/ActivityComment';
+import { formatTimestamp, copyToClipboard } from '../../Utils';
 
-function SummaryPanel(props) {
+const Summary = styled.summary`
+  margin-top: 0.25rem;
+  margin-bottom: 0.75rem;
+  font-weight: bold;
+  font-size: large;
+`;
+
+function TitlePanel(props) {
+  /*
+   * User is able to navigate to project page, view the ticket name,
+   * title/summary, and click an icon to copy a permalink to clipboard.
+   */
+  const [showToast, setShowToast] = useState(false);
+  const [copiedSuccessfully, setCopiedSuccessfully] = useState(false);
+
   const { issue_name, issue_summary, issue_resolution } = props;
+
+  const toggleShowToast = () => {
+    setShowToast(!showToast);
+  };
+
+  const handleOnClick = () => {
+    const success = copyToClipboard(window.location.href);
+    setCopiedSuccessfully(success);
+    toggleShowToast();
+  };
+
+  const toastStyle = {
+    position: 'absolute',
+    right: 0,
+    color: copiedSuccessfully ? 'var(--success)' : 'var(--danger)',
+  };
+
   return (
-    <span>
-      <h3>
-        <IssueNameLink {...props} />
-      </h3>
-      <h1>{issue_summary}</h1>
-    </span>
+    <React.Fragment>
+      <span>
+        <Toast
+          style={toastStyle}
+          show={showToast}
+          onClose={toggleShowToast}
+          delay={2000}
+          autohide
+        >
+          <Toast.Header>
+            <img
+              src="holder.js/20x20?text=%20"
+              className="rounded mr-2"
+              alt=""
+            />
+            <strong className="mr-auto">Copy to clipboard</strong>
+          </Toast.Header>
+          <Toast.Body>
+            {copiedSuccessfully ? 'Success!' : 'Something went wrong'}
+          </Toast.Body>
+        </Toast>
+        <h3>
+          <IssueNameLink {...props} />
+          <Icon
+            onClick={() => handleOnClick()}
+            title={`Copy link to clipboard`}
+            style={{ marginLeft: '1rem', cursor: 'copy' }}
+          >
+            link
+          </Icon>
+        </h3>
+        <h1>{issue_summary}</h1>
+      </span>
+    </React.Fragment>
   );
 }
 
@@ -27,41 +91,40 @@ function DetailsPanel(props) {
     issue_fixed_version,
   } = props;
   return (
-    <details open>
-      <summary>Details</summary>
-      {/* <h3>Details</h3> */}
-      <table>
+    <details open={true}>
+      <Summary>Details</Summary>
+      <Table striped borderless size="sm" className="table-vertical">
         <tbody>
           <tr>
-            <td>Status:</td>
+            <th>Status:</th>
             <td>{issue_status}</td>
           </tr>
           <tr>
-            <td>Resolution:</td>
+            <th>Resolution:</th>
             <td>{issue_resolution}</td>
           </tr>
           <tr>
-            <td>Type:</td>
+            <th>Type:</th>
             <td>{issue_type}</td>
           </tr>
           <tr>
-            <td>Priority:</td>
+            <th>Priority:</th>
             <td>{issue_priority}</td>
           </tr>
           <tr>
-            <td>Affects Version/s:</td>
+            <th>Affects Version/s:</th>
             <td>{issue_affected_version}</td>
           </tr>
           <tr>
-            <td>Fixed Version/s:</td>
+            <th>Fixed Version/s:</th>
             <td>{issue_fixed_version}</td>
           </tr>
           <tr>
-            <td>Story Points:</td>
+            <th>Story Points:</th>
             <td>{issue_story_points}</td>
           </tr>
         </tbody>
-      </table>
+      </Table>
     </details>
   );
 }
@@ -69,20 +132,20 @@ function DetailsPanel(props) {
 function DatesPanel(props) {
   const { created_at, updated_at } = props;
   return (
-    <details open>
-      <summary>Dates</summary>
-      <table>
+    <details open={true}>
+      <Summary>Dates</Summary>
+      <Table striped borderless size="sm" className="table-vertical">
         <tbody>
           <tr>
-            <td>Created:</td>
+            <th>Created:</th>
             <td>{formatTimestamp(created_at)}</td>
           </tr>
           <tr>
-            <td>Updated:</td>
+            <th>Updated:</th>
             <td>{formatTimestamp(updated_at)}</td>
           </tr>
         </tbody>
-      </table>
+      </Table>
     </details>
   );
 }
@@ -90,20 +153,20 @@ function DatesPanel(props) {
 function PeoplePanel(props) {
   const { created_by, issue_assigned_to } = props;
   return (
-    <details open>
-      <summary>People</summary>
-      <table>
+    <details open={true}>
+      <Summary>People</Summary>
+      <Table striped borderless size="sm" className="table-vertical">
         <tbody>
           <tr>
-            <td>Created By:</td>
+            <th>Created By:</th>
             <td>{created_by}</td>
           </tr>
           <tr>
-            <td>Assigned To:</td>
+            <th>Assigned To:</th>
             <td>{issue_assigned_to}</td>
           </tr>
         </tbody>
-      </table>
+      </Table>
     </details>
   );
 }
@@ -111,8 +174,8 @@ function PeoplePanel(props) {
 function DescriptionPanel(props) {
   const { issue_description } = props;
   return (
-    <details open>
-      <summary>Description</summary>
+    <details open={true}>
+      <Summary>Description</Summary>
       <p>{issue_description || `No description`}</p>
     </details>
   );
@@ -121,23 +184,21 @@ function DescriptionPanel(props) {
 function ActivityPanel(props) {
   const { activity } = props;
   return (
-    <div>
-      <h3>Activity</h3>
-      <ul>
+    <details open={true}>
+      <Summary>Activity</Summary>
+      <ul style={{ paddingLeft: '0' }}>
         {activity?.map((a) => (
-          <li key={uuidv4()}>{`${a.created_by} on ${formatTimestamp(
-            a.created_at,
-          )} [${a.activity_type}]: ${a.activity_text}`}</li>
+          <ActivityComment key={uuidv4()} {...a} />
         ))}
       </ul>
-    </div>
+    </details>
   );
 }
 
 export default function Issue(props) {
   return (
     <React.Fragment>
-      <SummaryPanel {...props} />
+      <TitlePanel {...props} />
       <hr />
       <DetailsPanel {...props} />
       <hr />
