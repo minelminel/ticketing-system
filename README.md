@@ -52,17 +52,20 @@
 - `/issues`: browse all tickets
 - `/issues/{ticket}`: view details of a specific ticket
 - `/dashboard`: Kanban board
+- `/metrics`: statistics on outstanding issues, resolution times, etc..
 
 ---
 
 ### UI Components
-- Single issue full-page detail view
-- Issue list item for use with dashboard with href action
+- ~~Icons for indicating issue_type & issue_priority~~
+- ~~strikethrough issue link~~
+- ~~Issue list item for use with dashboard with href action~~
+- ~~navbar~~
 - Dashboard grid layout
-- Icons for indicating issue_type & issue_priority
-- navbar
+- Single issue full-page detail view
 - auth provider/login page
 - admin panel with separate data tables for each SQL table & editing capability
 - new issue page component for creation
 - comment creation component with markdown support
 - loading spinner on all page components
+- activity children components for each activity_type

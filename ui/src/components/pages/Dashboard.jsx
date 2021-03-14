@@ -38,7 +38,11 @@ export default function Dashboard(props) {
             <hr />
             <div key={uuidv4()}>
               {array.map((issue) => (
-                <IssueItem href={`/issues/${issue.issue_name}`} {...issue} />
+                <IssueItem
+                  key={uuidv4()}
+                  href={`/issues/${issue.issue_name}`}
+                  {...issue}
+                />
               ))}
             </div>
           </Col>

@@ -1,15 +1,18 @@
 import React from 'react';
 import { v4 as uuidv4 } from 'uuid';
 
+import IssueNameLink from '../atoms/IssueNameLink';
 import { formatTimestamp } from '../../Utils';
 
 function SummaryPanel(props) {
-  const { issue_project, issue_name, issue_summary } = props;
+  const { issue_name, issue_summary, issue_resolution } = props;
   return (
-    <div>
-      <small>{`${issue_project} / ${issue_name}`}</small>
+    <span>
+      <h3>
+        <IssueNameLink {...props} />
+      </h3>
       <h1>{issue_summary}</h1>
-    </div>
+    </span>
   );
 }
 

@@ -1,6 +1,10 @@
 import React from 'react';
 import Badge from 'react-bootstrap/Badge';
 
+const defaultProps = {
+  style: {},
+};
+
 function getVariant(issue_type) {
   const colors = {
     bug: 'danger',
@@ -16,6 +20,14 @@ function getVariant(issue_type) {
 export default function IssueTypeBadge(props) {
   const { issue_type } = props;
   return (
-    <Badge variant={getVariant(issue_type)}>{issue_type?.toUpperCase()}</Badge>
+    <Badge
+      title={`Issue Type`}
+      style={props.style}
+      variant={getVariant(issue_type)}
+    >
+      {issue_type?.toUpperCase()}
+    </Badge>
   );
 }
+
+IssueTypeBadge.defaultProps = defaultProps;
