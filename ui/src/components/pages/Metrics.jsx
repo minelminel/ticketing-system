@@ -1,5 +1,4 @@
 import React from 'react';
-import CanvasJSReact from 'canvasjs';
 
 const defaultProps = {};
 
