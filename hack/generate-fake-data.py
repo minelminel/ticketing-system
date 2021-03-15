@@ -34,7 +34,7 @@ issue_template = {
     "issue_summary": "Allow users to edit tickets",
     "issue_type": "feature",
 }
-issue_project = lambda: "DWB"
+issue_project = lambda: "ABC"
 issue_affected_version = lambda: None
 issue_fixed_version = lambda: None
 issue_priority = lambda: random.choice([1, 2, 3, 4, 5])
@@ -58,7 +58,9 @@ issue_resolution = (
         ]
     )
 )
-issue_type = lambda: random.choice(["bug", "feature", "requirement", "support", "epic"])
+issue_type = lambda: random.choice(
+    ["bug", "task", "feature", "requirement", "support", "epic"]
+)
 issue_status = lambda: random.choice(
     ["open", "assigned", "in_progress", "on_hold", "under_review", "done", "released"]
 )

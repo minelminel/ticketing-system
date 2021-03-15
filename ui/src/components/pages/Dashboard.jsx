@@ -26,9 +26,24 @@ function groupIssuesByStatus(list, key = 'issue_status') {
   return { ...defaults, ...groups };
 }
 
+function filterDataByUser(data, user) {
+  /*
+   * If no user is provided, no filtering occurs.
+   * Otherwise, filtering occurs using the prop
+   * `issue_assigned_to` from the DB schema.
+   */
+  if (!user) {
+    return data;
+  }
+  return data?.filter((d) => d.issue_assigned_to === user);
+}
+
 export default function Dashboard(props) {
-  const { data } = props;
-  const groups = groupIssuesByStatus(data, 'issue_status');
+  const { data, user } = props;
+  const groups = groupIssuesByStatus(
+    filterDataByUser(data, user),
+    'issue_status',
+  );
   // TODO: make default props
   delete groups.done;
   delete groups.released;
@@ -37,7 +52,7 @@ export default function Dashboard(props) {
     <Container fluid>
       <Row>
         {Object.entries(groups).map(([key, array]) => (
-          <Col key={uuidv4()}>
+          <Col style={{ padding: '0 5 0 5' }} key={uuidv4()}>
             <h3>{`${formatSnakeCase(key)} (${array.length})`}</h3>
             <hr />
             <div key={uuidv4()}>

@@ -19,12 +19,14 @@ import Page from './components/pages/Page';
 import IssueDetail from './components/pages/IssueDetail';
 import IssueTable from './components/pages/IssueTable';
 import Dashboard from './components/pages/Dashboard';
+import Metrics from './components/pages/Metrics';
 
 function getIssues() {
   return fetch(`${API_ROOT}/issues`).then((response) => response.json());
 }
 
 export default function App() {
+  const [user, setUser] = useState(``);
   const [issues, setIssues] = useState([]);
 
   useEffect(() => {
@@ -48,7 +50,7 @@ export default function App() {
   const MetricsRoute = () => {
     return (
       <Page>
-        <h1>Metrics Page</h1>
+        <Metrics />
       </Page>
     );
   };
@@ -73,7 +75,7 @@ export default function App() {
     // TODO: filter by assignment
     return (
       <Page>
-        <Dashboard data={issues.data} />
+        <Dashboard user={user} data={issues.data} />
       </Page>
     );
   };
@@ -135,6 +137,9 @@ export default function App() {
               </Nav.Link>
             </NavItem>
           </Nav>
+          <NavItem style={{ color: 'var(--light)' }}>
+            {user ? user : 'Not logged in'}
+          </NavItem>
           <NavItem href="/create">
             <Nav.Link as={Link} to="/create">
               <Button size="sm">+ New Issue</Button>

@@ -10,7 +10,6 @@ import IssueStoryPointBadge from '../atoms/IssueStoryPointBadge';
 
 const Clickable = styled.a`
   color: inherit;
-  font-size: small;
   .card-body {
     padding: 0.5rem;
   }
