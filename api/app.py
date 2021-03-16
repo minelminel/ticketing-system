@@ -19,6 +19,7 @@ from flask import (
     jsonify,
     make_response,
 )
+from flask_restful import Api, Resource
 from werkzeug.datastructures import Headers
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm.exc import NoResultFound
@@ -131,16 +132,15 @@ def create_app(script_info):
 
     app = Flask(__name__)
     configure_app(app, script_info)
-    # config_object = configure_settings(script_info)
-    # app.config.from_object(config_object)
     configure_logging(app)
     app.url_map.strict_slashes = False
+    # init_app
     CORS(app)
-    # import bp
-    app.register_blueprint(bp, url_prefix="/api")
     # import db, ma
     db.init_app(app)
     ma.init_app(app)
+    # calling 'api.init_app(app)' is not required
+    app.register_blueprint(bp, url_prefix="/api")
 
     ## OVERHEAD
     @app.errorhandler(Exception)
@@ -162,6 +162,7 @@ def create_app(script_info):
 
 ## INSTANCES
 bp = Blueprint("api", __name__)
+# api = Api(bp); api.add_resource(<class>, <route>)
 db = SQLAlchemy()
 ma = Marshmallow()
 
@@ -179,7 +180,7 @@ def create_issue_name(issue_project):
         .first()
     )
     last_id = record.get("id", 0)
-    next_id = str(last_id + 1).zfill(app.config["TS_ISSUE_NUMBER_PADDING"])
+    next_id = str(last_id + 1).zfill(current_app.config["TS_ISSUE_NUMBER_PADDING"])
     return f"{issue_project}-{next_id}"
 
 

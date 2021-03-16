@@ -1,4 +1,5 @@
 flask
+flask-restful
 sqlalchemy==1.3.23
 flask-sqlalchemy
 flask-marshmallow
