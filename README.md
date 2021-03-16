@@ -75,3 +75,6 @@
 ### TODO
 - use url params in /issues table to set view (closed/open issues, pageNo, rowsPerPage)
 - generic activity component which handles all activity types
+- ~~add postgres service to docker-compose, allow db connection string via config (:docker)~~
+- add grafana service to docker-compose, remove passoword auth in config
+- link to grafana in UI

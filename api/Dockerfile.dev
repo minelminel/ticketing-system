@@ -1,13 +1,15 @@
 FROM python
 
 RUN python3 -m pip install --upgrade pip wheel setuptools
+RUN apt-get update && apt-get install -y netcat
 WORKDIR /tmp
 COPY requirements.txt .
 RUN python3 -m pip install -r requirements.txt && rm requirements.txt
 
-ENV TS_ENVIRONMENT=docker
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
+ENV FLASK_ENVIRONMENT=docker
 WORKDIR /src
 COPY . .
 EXPOSE 5000
-# should use `flask run` to avoid crash on syntax
-ENTRYPOINT python3 app.py
+ENTRYPOINT ["./docker-entrypoint.sh"]

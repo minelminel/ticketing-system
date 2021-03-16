@@ -1,44 +1,169 @@
 """
 TODO:
 - convert model columns to Enum where applicable
-- add configs: local,docker,test,production
-- create blueprints for issues,activity,auth
+- convert reply_* to object, `return reply.success()`
+- split blueprints for issues, activity, auth
+- use flask.cli.AppGroup for db subcommands
 """
-import os, json, datetime
+import os, sys, json, time, datetime, logging
+from itertools import chain
+
+from tabulate import tabulate
+import click
+from flask.cli import FlaskGroup, pass_script_info
 from flask import (
     Flask,
     Blueprint,
     current_app,
     request,
     jsonify,
-    render_template,
-    url_for,
     make_response,
 )
+from werkzeug.datastructures import Headers
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm.exc import NoResultFound
 from flask_cors import CORS
 from marshmallow import ValidationError, fields, validates, pre_load, post_load, EXCLUDE
 from flask_marshmallow import Marshmallow
 
-config = {
-    "SQLALCHEMY_DATABASE_URI": "sqlite:///database.db",
-    "SQLALCHEMY_TRACK_MODIFICATIONS": False,
-    "FLASK_ENVIRONMENT": os.getenv("FLASK_ENVIRONMENT", "local"),
-    "TS_ISSUE_NUMBER_PADDING": 4,
-}
+log = logging.getLogger(__name__)
 
-app = Flask(__name__)
-app.config.update(config)
-app.url_map.strict_slashes = False
-CORS(app)
-db = SQLAlchemy(app)
-ma = Marshmallow(app)
+ENV_VAR_KEY = "FLASK_ENV"
+ENV_VAR_VAL = "development"
+os.environ.setdefault(ENV_VAR_KEY, ENV_VAR_VAL)
 
-## OVERHEAD
-@app.errorhandler(Exception)
-def handle_exception(e):
-    return reply_error(message=str(e))
+
+class BaseConfig:
+    ENV = None
+    TESTING = False
+    DEBUG = True
+    LOG_FILE = None
+    LOG_LEVEL = "INFO"
+    SQLALCHEMY_DATABASE_URI = "sqlite:///database.db"
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
+    TS_ISSUE_NUMBER_PADDING = 4
+    TS_TIMER_HEADER_START = "X-TIME-RECEIVED"
+    TS_TIMER_HEADER_STOP = "X-TIME-COMPLETED"
+
+
+class TestingConfig(BaseConfig):
+    ENV = "testing"
+    TESTING = True
+    SQLALCHEMY_DATABASE_URI = "sqlite:///:memory:"
+
+
+class DevelopmentConfig(BaseConfig):
+    ENV = "development"
+    DEBUG = False
+
+
+class DockerConfig(BaseConfig):
+    ENV = "docker"
+    DEBUG = False
+    # dialect+driver://username:password@host:port/database
+    SQLALCHEMY_DATABASE_URI = f"postgresql://postgres:postgres@db:5432/default"
+
+
+class ProductionConfig(BaseConfig):
+    ENV = "production"
+
+
+def create_app(script_info):
+    """
+    Application Factory
+    """
+
+    def configure_app(app, script_info):
+        """
+        In order of precedence:
+        - Command-line argument
+        - Environment variable
+        - Default setting
+        """
+        options = {
+            "development": DevelopmentConfig,
+            "testing": TestingConfig,
+            "docker": DockerConfig,
+            "production": ProductionConfig,
+        }
+        if hasattr(script_info, "configuration"):
+            src = "cli"
+            env = script_info.configuration
+        elif os.getenv(ENV_VAR_KEY, ENV_VAR_VAL):
+            src = "env"
+            env = os.getenv(ENV_VAR_KEY, ENV_VAR_VAL)
+
+        if env not in options:
+            raise RuntimeError(
+                f"Invalid configuration environment setting: {env} ({src})"
+            )
+        config = options[env]
+        app.config.from_object(config)
+        return app
+
+    def configure_logging(app):
+        """
+        Global logging configuration. Access in other modules using
+        >>> import logging
+        >>> log = logging.getLogger(__name__)
+        """
+        log_file = app.config.get("LOG_FILE", None)
+        log_level = app.config.get("LOG_LEVEL", "INFO")
+
+        formatter = logging.Formatter(
+            "%(asctime)s - %(name)s - %(funcName)s:%(lineno)s - %(levelname)s - %(message)s"
+        )
+        handlers = []
+        if log_file:
+            file_handler = logging.FileHandler(filename=log_file, mode="a")
+            file_handler.setFormatter(formatter)
+            handlers.append(file_handler)
+        stream_handler = logging.StreamHandler(stream=sys.stdout)
+        stream_handler.setFormatter(formatter)
+        handlers.append(stream_handler)
+        logging.basicConfig(
+            datefmt="%m/%d/%Y %I:%M:%S %p", level=log_level, handlers=handlers
+        )
+        for _module, _level in app.config.get("LOGGING_OVERRIDES", {}).items():
+            log.debug(f"Overriding module logging: {_module} --> {_level}")
+            logging.getLogger(_module).setLevel(_level)
+        return app
+
+    app = Flask(__name__)
+    configure_app(app, script_info)
+    # config_object = configure_settings(script_info)
+    # app.config.from_object(config_object)
+    configure_logging(app)
+    app.url_map.strict_slashes = False
+    CORS(app)
+    # import bp
+    app.register_blueprint(bp, url_prefix="/api")
+    # import db, ma
+    db.init_app(app)
+    ma.init_app(app)
+
+    ## OVERHEAD
+    @app.errorhandler(Exception)
+    def handle_exception(e):
+        return reply_error(message=str(e))
+
+    @app.before_request
+    def before_request():
+        # this timestamp is read before returning the response and
+        # allows us to track how long the request was processed for.
+        # NOTE: this may remove immutability in subsequent handling
+        headers = Headers(
+            [(app.config["TS_TIMER_HEADER_START"], make_time()), *request.headers]
+        )
+        request.headers = headers
+
+    return app
+
+
+## INSTANCES
+bp = Blueprint("api", __name__)
+db = SQLAlchemy()
+ma = Marshmallow()
 
 
 ## UTILS
@@ -59,8 +184,16 @@ def create_issue_name(issue_project):
 
 
 def _base_reply(
-    data=None, message=None, status=None, response=None, timestamp=make_time()
+    data=None,
+    message=None,
+    status=None,
+    response=None,
+    timestamp=make_time(),
 ):
+    with current_app.app_context() as ctx:
+        now = make_time()
+        request.headers[ctx.app.config["TS_TIMER_HEADER_STOP"]] = now
+        duration = now - request.headers[ctx.app.config["TS_TIMER_HEADER_START"]]
     return make_response(
         jsonify(
             data=data,
@@ -68,6 +201,7 @@ def _base_reply(
             response=response,
             status=status,
             timestamp=timestamp,
+            duration=duration,
         ),
         response,
     )
@@ -90,9 +224,9 @@ class BaseModel(db.Model):
     __abstract__ = True
     id = db.Column(db.Integer(), primary_key=True, unique=True)
     created_by = db.Column(db.String(), nullable=False)
-    created_at = db.Column(db.Integer(), default=make_time, nullable=False)
+    created_at = db.Column(db.BigInteger(), default=make_time, nullable=False)
     updated_at = db.Column(
-        db.Integer(), default=None, onupdate=make_time, nullable=True
+        db.BigInteger(), default=None, onupdate=make_time, nullable=True
     )
 
 
@@ -264,7 +398,7 @@ class IssueSchema(BaseSchema):
 
 
 ## ROUTES
-@app.route("/api/issues", methods=["GET"])
+@bp.route("/issues", methods=["GET"])
 def issues_route():
     # TODO: validate params
     params = dict(request.args)
@@ -275,7 +409,7 @@ def issues_route():
     return reply_success(data=IssueSchema(many=True).dump(result))
 
 
-@app.route("/api/issues/<string:issue_name>", methods=["GET"])
+@bp.route("/issues/<string:issue_name>", methods=["GET"])
 def issue_route(issue_name):
     try:
         result = db.session.query(IssueModel).filter_by(issue_name=issue_name).one()
@@ -284,7 +418,7 @@ def issue_route(issue_name):
         return reply_missing(message=f"Invalid issue name: {issue_name}")
 
 
-@app.route("/api/activity", methods=["GET", "POST"])
+@bp.route("/activity", methods=["GET", "POST"])
 def activity_route():
     if request.method == "GET":
         # TODO: validate params
@@ -301,11 +435,66 @@ def activity_route():
         return reply_success(ActivitySchema().dump(obj))
 
 
-## DRIVER
-if __name__ == "__main__":
+@bp.route("/metrics", methods=["GET"])
+def metrics_route():
+    # TODO: parameterize this, add additional routes
+    all_issue_type = list(
+        chain(*db.session.query(IssueModel.issue_type.distinct()).all())
+    )
+    all_issue_status = list(
+        chain(*db.session.query(IssueModel.issue_status.distinct()).all())
+    )
+    all_issue_resolution = list(
+        chain(*db.session.query(IssueModel.issue_resolution.distinct()).all())
+    )
+    response = dict(issue_type={}, issue_status={}, issue_resolution={})
+    for issue_type in all_issue_type:
+        response["issue_type"][issue_type] = (
+            db.session.query(IssueModel).filter_by(issue_type=issue_type).count()
+        )
+    for issue_status in all_issue_status:
+        response["issue_status"][issue_status] = (
+            db.session.query(IssueModel).filter_by(issue_status=issue_status).count()
+        )
+    for issue_resolution in all_issue_resolution:
+        response["issue_resolution"][issue_resolution] = (
+            db.session.query(IssueModel)
+            .filter_by(issue_resolution=issue_resolution)
+            .count()
+        )
+    return reply_success(data=response)
+
+
+## CLI
+@click.group(cls=FlaskGroup, create_app=create_app)
+@click.option("-c", "--configuration", default="development")
+@pass_script_info
+def cli(script_info, configuration):
+    """This is the management script for the application"""
+    script_info.configuration = configuration
+
+
+@cli.command("settings")
+def cli_settings():
+    """Show environment configuration settings."""
+    print(tabulate(list(current_app.config.items()), headers=["Parameter", "Setting"]))
+
+
+@cli.command("db_create")
+def cli_db_create():
+    db.create_all()
+    db.session.commit()
+
+
+@cli.command("db_drop")
+def cli_db_create():
     db.drop_all()
     db.create_all()
-    # mock db hydration
+    db.session.commit()
+
+
+@cli.command("db_seed")
+def cli_db_seed():
     with open("./data/issues.json", "r") as file:
         issues = json.load(file)
     for each in issues:
@@ -316,4 +505,8 @@ if __name__ == "__main__":
     for each in activity:
         db.session.add(ActivitySchema().load(each))
         db.session.commit()
-    app.run(host="0.0.0.0", port=5000, debug=True, use_reloader=True)
+
+
+## DRIVER
+if __name__ == "__main__":
+    cli()
