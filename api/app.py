@@ -482,19 +482,24 @@ def cli_settings():
 
 @cli.command("db_create")
 def cli_db_create():
+    log.info("Creating database...")
     db.create_all()
     db.session.commit()
+    log.info("OK")
 
 
 @cli.command("db_drop")
 def cli_db_create():
+    log.info("Dropping database...")
     db.drop_all()
     db.create_all()
     db.session.commit()
+    log.info("OK")
 
 
 @cli.command("db_seed")
 def cli_db_seed():
+    log.info("Seeding database...")
     with open("./data/issues.json", "r") as file:
         issues = json.load(file)
     for each in issues:
@@ -505,6 +510,7 @@ def cli_db_seed():
     for each in activity:
         db.session.add(ActivitySchema().load(each))
         db.session.commit()
+    log.info("OK")
 
 
 ## DRIVER

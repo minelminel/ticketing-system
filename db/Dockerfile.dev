@@ -10,6 +10,6 @@ FROM postgres
 #        See PostgreSQL documentation about "trust":
 #        https://www.postgresql.org/docs/current/auth-trust.html
 
-ENV POSTGRES_HOST_AUTH_METHOD=trust
+# ENV POSTGRES_HOST_AUTH_METHOD=trust
 WORKDIR /var/lib/postgresql
 EXPOSE 5432

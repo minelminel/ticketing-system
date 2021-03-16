@@ -58,7 +58,7 @@ services:
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=database
+      - POSTGRES_DB=default
     networks:
       - default
   proxy:
