@@ -6,6 +6,7 @@ TODO:
 - use flask.cli.AppGroup for db subcommands
 """
 import os, sys, json, time, datetime, logging
+from enum import Enum
 from itertools import chain
 
 from tabulate import tabulate
@@ -218,6 +219,39 @@ def reply_error(data=None, message=None):
 
 def reply_missing(data=None, message=None):
     return _base_reply(data, message, status="missing", response=404)
+
+
+## ENUMS
+class IssueTypeEnum(Enum):
+    UNKNOWN = 0
+    BUG = 1
+    TASK = 2
+    FEATURE = 3
+    REQUIREMENT = 4
+    SUPPORT = 5
+    EPIC = 6
+
+
+class IssueStatusEnum(Enum):
+    UNKNOWN = 0
+    OPEN = 1
+    ASSIGNED = 2
+    IN_PROGRESS = 3
+    ON_HOLD = 4
+    UNDER_REVIEW = 5
+    DONE = 6
+    RELEASED = 7
+
+
+class IssueResolutionEnum(Enum):
+    UNKNOWN = 0
+    UNRESOLVED = 1
+    INVALID = 2
+    WONT_FIX = 3
+    OVERCOME_BY_EVENTS = 4
+    UNABLE_TO_REPLICATE = 5
+    DUPLICATE = 6
+    COMPLETE = 7
 
 
 ## MODELS
