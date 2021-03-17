@@ -58,7 +58,23 @@ services:
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=default
+      # - POSTGRES_DB=default
+    networks:
+      - default
+  grafana:
+    build:
+      context: ./grafana
+      dockerfile: Dockerfile.dev
+    image: ticketing-system-grafana
+    ports:
+      - 3001:3001
+    depends_on:
+      - db
+    labels:
+      app: "ticketing-system"
+      description: "Jira clone"
+    volumes:
+      - "./grafana/dashboards/:/etc/dashboards/"
     networks:
       - default
   proxy:
@@ -71,6 +87,7 @@ services:
     depends_on:
       - ui
       - api
+      - grafana
     labels:
       app: "ticketing-system"
       description: "Jira clone"

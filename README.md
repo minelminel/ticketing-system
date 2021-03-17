@@ -21,7 +21,7 @@
 | issue_resolution | `enum` | invalid, wont_fix, overcome_by_events, unable_to_replicate, duplicate, complete |
 | issue_affected_version | `string` |  |
 | issue_fixed_version | `string` |  |
-| issue_assignee | `string` |  |
+| issue_assigned_to | `string` |  |
 
 ---
 
@@ -78,3 +78,27 @@
 - ~~add postgres service to docker-compose, allow db connection string via config (:docker)~~
 - add grafana service to docker-compose, remove passoword auth in config
 - link to grafana in UI
+
+---
+
+### Grafana Queries
+
+```sql
+-- distribution of all issues by type
+SELECT issue_type AS "Issue Type", COUNT (issue_type) AS "Count" FROM issues GROUP BY issue_type ORDER BY 1;
+
+-- distribution of all issues by resolution
+SELECT issue_resolution AS "Issue Resolution", COUNT (issue_resolution) AS "Count" FROM issues GROUP BY issue_resolution ORDER BY 1;
+
+-- distribution of all issues by status, TODO: filter by issue_resolution LIKE '%unresolved%'
+SELECT issue_status AS "Issue Status", COUNT (issue_status) AS "Count" FROM issues GROUP BY issue_status ORDER BY 1;
+
+-- issue priority histogram
+SELECT issue_priority AS "Issue Priority", COUNT (issue_priority) AS "Count" FROM issues GROUP BY issue_priority ORDER BY 1;
+
+-- issue story points histogram
+SELECT issue_story_points AS "Issue Story Points", COUNT (issue_story_points) AS "Count" FROM issues GROUP BY issue_story_points ORDER BY 1;
+
+-- number of unresolved tickets per person, sorted high to low
+SELECT issue_assigned_to AS "Assignee", COUNT (issue_assigned_to) AS "Unresolved Issues" FROM issues WHERE issue_resolution LIKE '%unresolved%' GROUP BY issue_assigned_to ORDER BY 2 DESC;
+```

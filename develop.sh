@@ -2,7 +2,7 @@
 set -e
 
 function _up() {
-    docker-compose up -d
+    docker-compose up
     return 0
 }
 

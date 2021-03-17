@@ -62,7 +62,7 @@ class DockerConfig(BaseConfig):
     ENV = "docker"
     DEBUG = False
     # dialect+driver://username:password@host:port/database
-    SQLALCHEMY_DATABASE_URI = f"postgresql://postgres:postgres@db:5432/default"
+    SQLALCHEMY_DATABASE_URI = f"postgresql://postgres:postgres@localhost:5432"
 
 
 class ProductionConfig(BaseConfig):
