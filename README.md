@@ -94,12 +94,6 @@
 ---
 
 ### UI Components
-- ~~Icons for indicating issue_type & issue_priority~~
-- ~~strikethrough issue link~~
-- ~~Issue list item for use with dashboard with href action~~
-- ~~navbar~~
-- Dashboard grid layout
-- Single issue full-page detail view
 - auth provider/login page
 - admin panel with separate data tables for each SQL table & editing capability
 - new issue page component for creation
@@ -112,7 +106,6 @@
 ### TODO
 - use url params in /issues table to set view (closed/open issues, pageNo, rowsPerPage)
 - generic activity component which handles all activity types
-- link to grafana in UI
 
 ---
 

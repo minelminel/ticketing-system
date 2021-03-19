@@ -186,7 +186,7 @@ function ActivityPanel(props) {
   return (
     <details open={true}>
       <Summary>Activity</Summary>
-      <ul style={{ paddingLeft: '0' }}>
+      <ul style={{ paddingLeft: '0', paddingBottom: '0.5rem' }}>
         {activity?.map((a) => (
           <ActivityComment key={uuidv4()} {...a} />
         ))}
