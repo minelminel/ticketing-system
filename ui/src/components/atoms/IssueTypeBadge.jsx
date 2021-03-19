@@ -8,27 +8,27 @@ const defaultProps = {
 
 function icons(issue_type) {
   const colors = {
-    bug: {
+    BUG: {
       variant: 'danger',
       icon: 'bug_report',
     },
-    task: {
+    TASK: {
       variant: 'success',
       icon: 'check',
     },
-    feature: {
+    FEATURE: {
       variant: 'primary',
       icon: 'add',
     },
-    requirement: {
+    REQUIREMENT: {
       variant: 'info',
       icon: 'star',
     },
-    support: {
+    SUPPORT: {
       variant: 'secondary',
       icon: 'accessibility',
     },
-    epic: {
+    EPIC: {
       variant: 'royal',
       icon: 'flash_on',
     },

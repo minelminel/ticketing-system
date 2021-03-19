@@ -78,11 +78,11 @@ for _ in range(NUM_ISSUES):
         issue_fixed_version=issue_fixed_version(),
         issue_priority=issue_priority(),
         issue_project=issue_project(),
-        issue_resolution=issue_resolution(),
-        issue_status=issue_status(),
+        issue_resolution=issue_resolution().upper(),
+        issue_status=issue_status().upper(),
         issue_story_points=issue_story_points(),
         issue_summary=issue_summary(),
-        issue_type=issue_type(),
+        issue_type=issue_type().upper(),
     )
     issues.append(i)
 
@@ -100,7 +100,7 @@ activity_template = {
 
 issue_id = lambda: random.randint(1, NUM_ISSUES)
 # created_by same as before
-activity_type = lambda: "comment"
+activity_type = lambda: "comment".upper()
 activity_text = lambda: lorem.sentence()
 
 activity = []
@@ -108,7 +108,7 @@ for _ in range(NUM_ACTIVITY):
     a = dict(
         issue_id=issue_id(),
         created_by=created_by(),
-        activity_type=activity_type(),
+        activity_type=activity_type().upper(),
         activity_text=activity_text(),
     )
     activity.append(a)

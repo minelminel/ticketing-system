@@ -1,0 +1,188 @@
+[
+    {
+        "table_name": "issues",
+        "table_column": "issue_type",
+        "name": "UNKNOWN",
+        "value": 0
+    },
+    {
+        "table_name": "issues",
+        "table_column": "issue_type",
+        "name": "BUG",
+        "value": 1
+    },
+    {
+        "table_name": "issues",
+        "table_column": "issue_type",
+        "name": "TASK",
+        "value": 2
+    },
+    {
+        "table_name": "issues",
+        "table_column": "issue_type",
+        "name": "FEATURE",
+        "value": 3
+    },
+    {
+        "table_name": "issues",
+        "table_column": "issue_type",
+        "name": "REQUIREMENT",
+        "value": 4
+    },
+    {
+        "table_name": "issues",
+        "table_column": "issue_type",
+        "name": "SUPPORT",
+        "value": 5
+    },
+    {
+        "table_name": "issues",
+        "table_column": "issue_type",
+        "name": "EPIC",
+        "value": 6
+    },
+    {
+        "table_name": "issues",
+        "table_column": "issue_status",
+        "name": "UNKNOWN",
+        "value": 0
+    },
+    {
+        "table_name": "issues",
+        "table_column": "issue_status",
+        "name": "OPEN",
+        "value": 1
+    },
+    {
+        "table_name": "issues",
+        "table_column": "issue_status",
+        "name": "ASSIGNED",
+        "value": 2
+    },
+    {
+        "table_name": "issues",
+        "table_column": "issue_status",
+        "name": "IN_PROGRESS",
+        "value": 3
+    },
+    {
+        "table_name": "issues",
+        "table_column": "issue_status",
+        "name": "ON_HOLD",
+        "value": 4
+    },
+    {
+        "table_name": "issues",
+        "table_column": "issue_status",
+        "name": "UNDER_REVIEW",
+        "value": 5
+    },
+    {
+        "table_name": "issues",
+        "table_column": "issue_status",
+        "name": "DONE",
+        "value": 6
+    },
+    {
+        "table_name": "issues",
+        "table_column": "issue_status",
+        "name": "RELEASED",
+        "value": 7
+    },
+    {
+        "table_name": "issues",
+        "table_column": "issue_resolution",
+        "name": "UNKNOWN",
+        "value": 0
+    },
+    {
+        "table_name": "issues",
+        "table_column": "issue_resolution",
+        "name": "UNRESOLVED",
+        "value": 1
+    },
+    {
+        "table_name": "issues",
+        "table_column": "issue_resolution",
+        "name": "INVALID",
+        "value": 2
+    },
+    {
+        "table_name": "issues",
+        "table_column": "issue_resolution",
+        "name": "WONT_FIX",
+        "value": 3
+    },
+    {
+        "table_name": "issues",
+        "table_column": "issue_resolution",
+        "name": "OVERCOME_BY_EVENTS",
+        "value": 4
+    },
+    {
+        "table_name": "issues",
+        "table_column": "issue_resolution",
+        "name": "UNABLE_TO_REPLICATE",
+        "value": 5
+    },
+    {
+        "table_name": "issues",
+        "table_column": "issue_resolution",
+        "name": "DUPLICATE",
+        "value": 6
+    },
+    {
+        "table_name": "issues",
+        "table_column": "issue_resolution",
+        "name": "COMPLETE",
+        "value": 7
+    },
+    {
+        "table_name": "activity",
+        "table_column": "activity_type",
+        "name": "UNKNOWN",
+        "value": 0
+    },
+    {
+        "table_name": "activity",
+        "table_column": "activity_type",
+        "name": "COMMENT",
+        "value": 1
+    },
+    {
+        "table_name": "activity",
+        "table_column": "activity_type",
+        "name": "ASSIGNMENT",
+        "value": 2
+    },
+    {
+        "table_name": "activity",
+        "table_column": "activity_type",
+        "name": "STATUS",
+        "value": 3
+    },
+    {
+        "table_name": "activity",
+        "table_column": "activity_type",
+        "name": "RESOLUTION",
+        "value": 4
+    },
+    {
+        "table_name": "users",
+        "table_column": "user_type",
+        "name": "UNKNOWN",
+        "value": 0
+    },
+    {
+        "table_name": "users",
+        "table_column": "user_type",
+        "name": "ADMIN",
+        "value": 1
+    },
+    {
+        "table_name": "users",
+        "table_column": "user_type",
+        "name": "USER",
+        "value": 2
+    }
+]

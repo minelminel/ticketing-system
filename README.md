@@ -12,7 +12,7 @@
 | created_by | `string` |  |
 | issue_name | `string` |  |
 | issue_project | `string` |  |
-| issue_type | `enum` | bug, feature, requirement, support, epic |
+| issue_type | `enum` | bug, task, feature, requirement, support, epic |
 | issue_priority | `enum` | 1, 2, 3, 4, 5 |
 | issue_story_points | `int` |  |
 | issue_summary | `string` |  |
@@ -43,6 +43,43 @@
 `CREATE TABLE users`
 
 **TODO**
+
+`ENUMS`
+
+| table_name | table_column | name | value |
+|:---|:---|:---|:---|
+| issues | issue_type | UNKNOWN | 0 |
+| issues | issue_type | BUG | 1 |
+| issues | issue_type | TASK | 2 |
+| issues | issue_type | FEATURE | 3 |
+| issues | issue_type | REQUIREMENT | 4 |
+| issues | issue_type | SUPPORT | 5 |
+| issues | issue_type | EPIC | 6 |
+| issues | issue_status | UNKNOWN | 0 |
+| issues | issue_status | OPEN | 1 |
+| issues | issue_status | ASSIGNED | 2 |
+| issues | issue_status | IN_PROGRESS | 3 |
+| issues | issue_status | ON_HOLD | 4 |
+| issues | issue_status | UNDER_REVIEW | 5 |
+| issues | issue_status | DONE | 6 |
+| issues | issue_status | RELEASED | 7 |
+| issues | issue_resolution | UNKNOWN | 0 |
+| issues | issue_resolution | UNRESOLVED | 1 |
+| issues | issue_resolution | INVALID | 2 |
+| issues | issue_resolution | WONT_FIX | 3 |
+| issues | issue_resolution | OVERCOME_BY_EVENTS | 4 |
+| issues | issue_resolution | UNABLE_TO_REPLICATE | 5 |
+| issues | issue_resolution | DUPLICATE | 6 |
+| issues | issue_resolution | COMPLETE | 7 |
+| activity | activity_type | UNKNOWN | 0 |
+| activity | activity_type | COMMENT | 1 |
+| activity | activity_type | ASSIGNMENT | 2 |
+| activity | activity_type | STATUS | 3 |
+| activity | activity_type | RESOLUTION | 4 |
+| users | user_type | UNKNOWN | 0 |
+| users | user_type | ADMIN | 1 |
+| users | user_type | USER | 2 |
+
 
 ---
 
@@ -75,8 +112,6 @@
 ### TODO
 - use url params in /issues table to set view (closed/open issues, pageNo, rowsPerPage)
 - generic activity component which handles all activity types
-- ~~add postgres service to docker-compose, allow db connection string via config (:docker)~~
-- add grafana service to docker-compose, remove passoword auth in config
 - link to grafana in UI
 
 ---

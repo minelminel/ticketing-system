@@ -45,9 +45,9 @@ export default function Dashboard(props) {
     'issue_status',
   );
   // TODO: make default props
-  delete groups.done;
-  delete groups.released;
-  delete groups.open;
+  delete groups.DONE;
+  delete groups.RELEASED;
+  delete groups.OPEN;
   return (
     <Container fluid>
       <Row>

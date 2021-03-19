@@ -1,22 +1,22 @@
 export const IssueTypeEnum = {
   // @deprecate
-  bug: 0,
-  task: 1,
-  feature: 2,
-  requirement: 3,
-  support: 4,
-  epic: 5,
+  BUG: 0,
+  TASK: 1,
+  FEATURE: 2,
+  REQUIREMENT: 3,
+  SUPPORT: 4,
+  EPIC: 5,
 };
 
 export const IssueStatusEnum = {
   // @deprecate
-  open: 0,
-  assigned: 1,
-  in_progress: 2,
-  on_hold: 3,
-  under_review: 4,
-  done: 5,
-  released: 6,
+  OPEN: 0,
+  ASSIGNED: 1,
+  IN_PROGRESS: 2,
+  ON_HOLD: 3,
+  UNDER_REVIEW: 4,
+  DONE: 5,
+  RELEASED: 6,
 };
 
 const Enum = (object) => {

@@ -13,7 +13,7 @@ const StyledName = styled.span`
 
 export default function IssueNameLink(props) {
   const { issue_name, issue_resolution } = props;
-  const resolved = issue_resolution !== 'unresolved';
+  const resolved = issue_resolution !== 'UNRESOLVED';
   return (
     <a style={props.style} href={`/issues/${issue_name}`}>
       <StyledName resolved={resolved}>{issue_name}</StyledName>

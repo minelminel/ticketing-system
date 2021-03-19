@@ -83,8 +83,8 @@ export default function IssueTable(props) {
         columns={columns}
         data={data?.filter(function (row) {
           return onlyOpenIssues
-            ? row.issue_resolution === `unresolved`
-            : row.issue_resolution !== `unresolved`;
+            ? row.issue_resolution === `UNRESOLVED`
+            : row.issue_resolution !== `UNRESOLVED`;
         })}
         options={options}
         actions={[

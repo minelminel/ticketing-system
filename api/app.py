@@ -1,9 +1,9 @@
 """
 TODO:
-- convert model columns to Enum where applicable
-- convert reply_* to object, `return reply.success()`
+- convert Enum columns to Int on load, Str on dump
 - split blueprints for issues, activity, auth
 - use flask.cli.AppGroup for db subcommands
+- use foreign key for user fields rather than static string
 """
 import os, sys, json, time, datetime, logging
 from enum import Enum
@@ -25,7 +25,15 @@ from werkzeug.datastructures import Headers
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm.exc import NoResultFound
 from flask_cors import CORS
-from marshmallow import ValidationError, fields, validates, pre_load, post_load, EXCLUDE
+from marshmallow import (
+    ValidationError,
+    fields,
+    validates,
+    validate,
+    pre_load,
+    post_load,
+    EXCLUDE,
+)
 from flask_marshmallow import Marshmallow
 
 log = logging.getLogger(__name__)
@@ -144,9 +152,13 @@ def create_app(script_info):
     app.register_blueprint(bp, url_prefix="/api")
 
     ## OVERHEAD
+    @app.errorhandler(404)
+    def handle_not_found(e):
+        return Reply.missing(message=str(e))
+
     @app.errorhandler(Exception)
     def handle_exception(e):
-        return reply_error(message=str(e))
+        return Reply.exception(message=str(e))
 
     @app.before_request
     def before_request():
@@ -185,44 +197,80 @@ def create_issue_name(issue_project):
     return f"{issue_project}-{next_id}"
 
 
-def _base_reply(
-    data=None,
-    message=None,
-    status=None,
-    response=None,
-    timestamp=make_time(),
-):
-    with current_app.app_context() as ctx:
-        now = make_time()
-        request.headers[ctx.app.config["TS_TIMER_HEADER_STOP"]] = now
-        duration = now - request.headers[ctx.app.config["TS_TIMER_HEADER_START"]]
-    return make_response(
-        jsonify(
-            data=data,
-            message=message,
-            response=response,
-            status=status,
-            timestamp=timestamp,
-            duration=duration,
-        ),
-        response,
-    )
+class Reply(object):
+    """
+    Static class for reply namespace.
+    """
+
+    @staticmethod
+    def get_duration():
+        with current_app.app_context() as ctx:
+            now = make_time()
+            request.headers[ctx.app.config["TS_TIMER_HEADER_STOP"]] = now
+            return now - request.headers[ctx.app.config["TS_TIMER_HEADER_START"]]
+
+    @classmethod
+    def _base_reply(
+        cls, data=None, message=None, status=None, response=None, timestamp=make_time()
+    ):
+        return make_response(
+            jsonify(
+                data=data,
+                message=message,
+                response=response,
+                status=status,
+                timestamp=timestamp,
+                duration=cls.get_duration(),
+            ),
+            response,
+        )
+
+    @classmethod
+    def success(cls, data=None, message=None):
+        return cls._base_reply(
+            data=data, message=message, status="success", response=200
+        )
+
+    @classmethod
+    def error(cls, data=None, message=None):
+        return cls._base_reply(data=data, message=message, status="error", response=400)
+
+    @classmethod
+    def exception(cls, data=None, message=None):
+        return cls._base_reply(
+            data=data, message=message, status="exception", response=500
+        )
+
+    @classmethod
+    def missing(cls, data=None, message=None):
+        return cls._base_reply(
+            data=data, message=message, status="missing", response=404
+        )
 
 
-def reply_success(data=None, message=None):
-    return _base_reply(data, message, status="success", response=200)
+## ENUMS: raise ValueError on (), AttributeError on .
+class ExtendedEnum(Enum):
+    """
+    MyEnum(0)
+        -> raises ValueError if invalid
+    MyEnum["KEY"], MyEnum.KEY
+        -> raises AttributeError if invalid
+    """
+
+    @classmethod
+    def names(cls):
+        return list(map(lambda e: e.name, cls))
+
+    @classmethod
+    def values(cls):
+        return list(map(lambda e: e.value, cls))
+
+    @classmethod
+    def items(cls):
+        return list(map(lambda e: (e.name, e.value), cls))
 
 
-def reply_error(data=None, message=None):
-    return _base_reply(data, message, status="error", response=500)
-
-
-def reply_missing(data=None, message=None):
-    return _base_reply(data, message, status="missing", response=404)
-
-
-## ENUMS
-class IssueTypeEnum(Enum):
+class IssueTypeEnum(ExtendedEnum):
     UNKNOWN = 0
     BUG = 1
     TASK = 2
@@ -232,7 +280,7 @@ class IssueTypeEnum(Enum):
     EPIC = 6
 
 
-class IssueStatusEnum(Enum):
+class IssueStatusEnum(ExtendedEnum):
     UNKNOWN = 0
     OPEN = 1
     ASSIGNED = 2
@@ -243,7 +291,7 @@ class IssueStatusEnum(Enum):
     RELEASED = 7
 
 
-class IssueResolutionEnum(Enum):
+class IssueResolutionEnum(ExtendedEnum):
     UNKNOWN = 0
     UNRESOLVED = 1
     INVALID = 2
@@ -252,6 +300,14 @@ class IssueResolutionEnum(Enum):
     UNABLE_TO_REPLICATE = 5
     DUPLICATE = 6
     COMPLETE = 7
+
+
+class ActivityTypeEnum(ExtendedEnum):
+    UNKNOWN = 0
+    COMMENT = 1
+    ASSIGNMENT = 2
+    STATUS = 3
+    RESOLUTION = 4
 
 
 ## MODELS
@@ -327,14 +383,10 @@ class ActivitySchema(BaseSchema):
 
     issue_id = fields.Int(required=True)
     issues = fields.Int(load_only=True)  # not sure about this..
-    activity_type = fields.Str(required=True)
+    activity_type = fields.Str(
+        required=True, validate=validate.OneOf(ActivityTypeEnum.names())
+    )
     activity_text = fields.Str(required=False)
-
-    @validates("activity_type")
-    def validate_activity_type(self, data, **kwargs):
-        choices = ("comment", "assignment", "status", "resolution")
-        if data not in choices:
-            raise ValidationError(f"Invalid activity type: {data}, must be {choices}")
 
     @validates("issue_id")
     def validate_issue_id(self, data, **kwargs):
@@ -360,71 +412,27 @@ class IssueSchema(BaseSchema):
     created_by = fields.Str(required=True, allow_none=False)
     issue_project = fields.Str(required=True)
     issue_name = fields.Str(dump_only=True)
-    issue_type = fields.Str(required=True)
-    issue_priority = fields.Int(required=True)
-    issue_story_points = fields.Int(required=True)
+    issue_type = fields.Str(
+        required=True, validate=validate.OneOf(IssueTypeEnum.names())
+    )
+    issue_priority = fields.Int(required=True, validate=validate.Range(min=1, max=5))
+    issue_story_points = fields.Int(required=True, validate=validate.Range(min=1))
     issue_summary = fields.Str(required=True)
     issue_description = fields.Str(required=False, allow_none=True)
-    issue_status = fields.Str(required=False, missing="open", default="open")
+    issue_status = fields.Str(
+        required=False,
+        default=IssueStatusEnum.OPEN,
+        validate=validate.OneOf(IssueStatusEnum.names()),
+    )
     issue_resolution = fields.Str(
-        required=False, missing="unresolved", default="unresolved"
+        required=False,
+        default=IssueResolutionEnum.UNRESOLVED,
+        validate=validate.OneOf(IssueResolutionEnum.names()),
     )
     issue_fixed_version = fields.Str(required=False, allow_none=True)
     issue_assigned_to = fields.Str(required=False, allow_none=True)
     # one-to-many
     activity = fields.Nested(ActivitySchema, many=True)
-
-    @validates("issue_resolution")
-    def validate_issue_resolution(self, data, **kwargs):
-        choices = (
-            "unresolved",
-            "invalid",
-            "wont_fix",
-            "overcome_by_events",
-            "unable_to_replicate",
-            "duplicate",
-            "complete",
-        )
-        if data not in choices:
-            raise ValidationError(
-                f"Invalid issue resolution: {data}, must be {choices}"
-            )
-
-    @validates("issue_status")
-    def validate_issue_status(self, data, **kwargs):
-        choices = (
-            "open",
-            "assigned",
-            "in_progress",
-            "on_hold",
-            "under_review",
-            "done",
-            "released",
-        )
-        if data not in choices:
-            raise ValidationError(f"Invalid issue status: {data}, must be {choices}")
-
-    @validates("issue_story_points")
-    def validate_issue_story_points(self, data, **kwargs):
-        if data < 1:
-            raise ValidationError(
-                f"Invalid issue story points: {data}, must be greater than 1"
-            )
-
-    @validates("issue_priority")
-    def validate_issue_priority(self, data, **kwargs):
-        min_pri = 1
-        max_pri = 5
-        if data not in range(min_pri, max_pri + 1):
-            raise ValidationError(
-                f"Invalid issue priority: {data}, must be between {min_pri} and {max_pri}"
-            )
-
-    @validates("issue_type")
-    def validate_issue_type(self, data, **kwargs):
-        choices = ("bug", "task", "feature", "requirement", "support", "epic")
-        if data not in choices:
-            raise ValidationError(f"Invalid issue type: {data}, must be {choices}")
 
     @post_load
     def post_load(self, data, **kwargs):
@@ -435,74 +443,51 @@ class IssueSchema(BaseSchema):
 ## ROUTES
 @bp.route("/issues", methods=["GET"])
 def issues_route():
+    # TODO: implement pagination
     # TODO: validate params
     params = dict(request.args)
     query = db.session.query(IssueModel)
     if params:
         query = query.filter_by(**params)
     result = query.all()
-    return reply_success(data=IssueSchema(many=True).dump(result))
+    return Reply.success(data=IssueSchema(many=True).dump(result))
 
 
 @bp.route("/issues/<string:issue_name>", methods=["GET"])
 def issue_route(issue_name):
     try:
         result = db.session.query(IssueModel).filter_by(issue_name=issue_name).one()
-        return reply_success(data=IssueSchema().dump(result))
+        return Reply.success(data=IssueSchema().dump(result))
     except NoResultFound as exc:
-        return reply_missing(message=f"Invalid issue name: {issue_name}")
+        return Reply.missing(message=f"Invalid issue name: {issue_name}")
 
 
 @bp.route("/activity", methods=["GET", "POST"])
 def activity_route():
     if request.method == "GET":
+        # TODO: implement pagination
         # TODO: validate params
         params = dict(request.args)
         query = db.session.query(ActivityModel)
         if params:
             query = query.filter_by(**params)
         result = query.all()
-        return reply_success(data=ActivitySchema(many=True).dump(result))
+        return Reply.success(data=ActivitySchema(many=True).dump(result))
     elif request.method == "POST":
         obj = ActivitySchema().load(request.get_json())
         db.session.add(obj)
         db.session.commit()
-        return reply_success(ActivitySchema().dump(obj))
-
-
-@bp.route("/metrics", methods=["GET"])
-def metrics_route():
-    # TODO: parameterize this, add additional routes
-    all_issue_type = list(
-        chain(*db.session.query(IssueModel.issue_type.distinct()).all())
-    )
-    all_issue_status = list(
-        chain(*db.session.query(IssueModel.issue_status.distinct()).all())
-    )
-    all_issue_resolution = list(
-        chain(*db.session.query(IssueModel.issue_resolution.distinct()).all())
-    )
-    response = dict(issue_type={}, issue_status={}, issue_resolution={})
-    for issue_type in all_issue_type:
-        response["issue_type"][issue_type] = (
-            db.session.query(IssueModel).filter_by(issue_type=issue_type).count()
-        )
-    for issue_status in all_issue_status:
-        response["issue_status"][issue_status] = (
-            db.session.query(IssueModel).filter_by(issue_status=issue_status).count()
-        )
-    for issue_resolution in all_issue_resolution:
-        response["issue_resolution"][issue_resolution] = (
-            db.session.query(IssueModel)
-            .filter_by(issue_resolution=issue_resolution)
-            .count()
-        )
-    return reply_success(data=response)
+        return Reply.success(ActivitySchema().dump(obj))
 
 
 ## CLI
 @click.group(cls=FlaskGroup, create_app=create_app)
-@click.option("-c", "--configuration", default="development")
+@click.option(
+    "-c",
+    "--configuration",
+    default="development",
+    type=click.Choice(["development", "docker", "testing", "production"]),
+)
 @pass_script_info
 def cli(script_info, configuration):
     """This is the management script for the application"""
@@ -517,6 +502,7 @@ def cli_settings():
 
 @cli.command("db_create")
 def cli_db_create():
+    """Create all tables"""
     log.info("Creating database...")
     db.create_all()
     db.session.commit()
@@ -524,7 +510,8 @@ def cli_db_create():
 
 
 @cli.command("db_drop")
-def cli_db_create():
+def cli_db_drop():
+    """Drops all tables"""
     log.info("Dropping database...")
     db.drop_all()
     db.create_all()
@@ -534,12 +521,15 @@ def cli_db_create():
 
 @cli.command("db_seed")
 def cli_db_seed():
+    """Injects mock data into tables"""
     log.info("Seeding database...")
+    log.info(f"Writing table: {IssueModel.__tablename__}")
     with open("./data/issues.json", "r") as file:
         issues = json.load(file)
     for each in issues:
         db.session.add(IssueSchema().load(each))
         db.session.commit()
+    log.info(f"Writing table: {ActivityModel.__tablename__}")
     with open("./data/activity.json", "r") as file:
         activity = json.load(file)
     for each in activity:

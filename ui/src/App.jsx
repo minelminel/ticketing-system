@@ -41,7 +41,7 @@ export default function App() {
 
   const HomeRoute = () => {
     return (
-      <Page>
+      <Page className="full-height">
         <h1>Home Page</h1>
       </Page>
     );
@@ -49,7 +49,15 @@ export default function App() {
 
   const MetricsRoute = () => {
     return (
-      <Page>
+      <Page className="p-0 full-height">
+        {/* <iframe
+          frameBorder="0"
+          style={{ overflow: 'hidden', height: '100%', width: '100%' }}
+          width="100%"
+          height="100%"
+          src="http://localhost:3001/?orgId=1"
+          title="Grafana"
+        ></iframe> */}
         <Metrics />
       </Page>
     );
@@ -110,7 +118,7 @@ export default function App() {
 
   return (
     <Router>
-      <Navbar bg="dark" variant="dark" className="mb-2">
+      <Navbar bg="dark" variant="dark" className="mb-0">
         <Navbar.Brand as={Link} to="/">
           Ticketing System
         </Navbar.Brand>
