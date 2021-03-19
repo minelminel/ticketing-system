@@ -136,6 +136,10 @@ SELECT issue_story_points AS "Issue Story Points", COUNT (issue_story_points) AS
 
 -- number of unresolved tickets per person, sorted high to low
 SELECT issue_assigned_to AS "Assignee", COUNT (issue_assigned_to) AS "Unresolved Issues" FROM issues WHERE issue_resolution LIKE '%unresolved%' GROUP BY issue_assigned_to ORDER BY 2 DESC;
+
+
+-- single column count, use multiple queries
+SELECT COUNT(*) FILTER (WHERE issue_type LIKE '%TASK%') AS "TASK" FROM issues;
 ```
 
 ---
