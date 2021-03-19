@@ -30,7 +30,7 @@ export default function IssueItem(props) {
     issue_summary,
   } = props;
   return (
-    <Card>
+    <Card style={{ marginBottom: '2px' }}>
       <Clickable href={href}>
         <Card.Body>
           <Row className="mb-3">

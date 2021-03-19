@@ -20,6 +20,7 @@ import IssueDetail from './components/pages/IssueDetail';
 import IssueTable from './components/pages/IssueTable';
 import Dashboard from './components/pages/Dashboard';
 import Metrics from './components/pages/Metrics';
+import IssueForm from './components/pages/IssueForm';
 
 function getIssues() {
   return fetch(`${API_ROOT}/issues`).then((response) => response.json());
@@ -42,7 +43,7 @@ export default function App() {
   const HomeRoute = () => {
     return (
       <Page className="full-height">
-        <h1>Home Page</h1>
+        <h4>Home Page</h4>
       </Page>
     );
   };
@@ -50,14 +51,6 @@ export default function App() {
   const MetricsRoute = () => {
     return (
       <Page className="p-0 full-height">
-        {/* <iframe
-          frameBorder="0"
-          style={{ overflow: 'hidden', height: '100%', width: '100%' }}
-          width="100%"
-          height="100%"
-          src="http://localhost:3001/?orgId=1"
-          title="Grafana"
-        ></iframe> */}
         <Metrics />
       </Page>
     );
@@ -65,8 +58,8 @@ export default function App() {
 
   const CreationRoute = () => {
     return (
-      <Page>
-        <h1>Create Issue</h1>
+      <Page fluid={null} className="mt-2">
+        <IssueForm user={user} />
       </Page>
     );
   };
@@ -82,7 +75,7 @@ export default function App() {
   const DashboardRoute = () => {
     // TODO: filter by assignment
     return (
-      <Page>
+      <Page className="mt-2">
         <Dashboard user={user} data={issues.data} />
       </Page>
     );
@@ -145,7 +138,7 @@ export default function App() {
               </Nav.Link>
             </NavItem>
           </Nav>
-          <NavItem style={{ color: 'var(--light)' }}>
+          <NavItem style={{ color: 'var(--light)' }} className="mr-3">
             {user ? user : 'Not logged in'}
           </NavItem>
           <NavItem href="/create">

@@ -96,7 +96,7 @@
 ### UI Components
 - auth provider/login page
 - admin panel with separate data tables for each SQL table & editing capability
-- new issue page component for creation
+- ~~new issue page component for creation~~
 - comment creation component with markdown support
 - loading spinner on all page components
 - activity children components for each activity_type
@@ -106,6 +106,7 @@
 ### TODO
 - use url params in /issues table to set view (closed/open issues, pageNo, rowsPerPage)
 - generic activity component which handles all activity types
+- new issue submission logic, toast notification with link to single issue
 
 ---
 

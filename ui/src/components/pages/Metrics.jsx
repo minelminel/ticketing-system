@@ -1,4 +1,5 @@
 import React from 'react';
+import { GRAFANA_ROOT } from '../../Constants';
 
 const defaultProps = {};
 
@@ -10,7 +11,7 @@ export default function Metrics(props) {
         style={{ overflow: 'hidden', height: '100%', width: '100%' }}
         width="100%"
         height="100%"
-        src="http://localhost:3001/?orgId=1"
+        src={GRAFANA_ROOT}
         title="Grafana"
       ></iframe>
     </React.Fragment>

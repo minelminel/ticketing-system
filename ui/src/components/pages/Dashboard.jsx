@@ -53,7 +53,7 @@ export default function Dashboard(props) {
       <Row>
         {Object.entries(groups).map(([key, array]) => (
           <Col style={{ padding: '0 5 0 5' }} key={uuidv4()}>
-            <h3>{`${formatSnakeCase(key)} (${array.length})`}</h3>
+            <h4>{`${formatSnakeCase(key)} (${array.length})`}</h4>
             <hr />
             <div key={uuidv4()}>
               {array.map((issue) => (
