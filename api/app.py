@@ -158,6 +158,7 @@ def create_app(script_info):
 
     @app.errorhandler(Exception)
     def handle_exception(e):
+        log.error(e)
         return Reply.exception(message=str(e))
 
     @app.before_request
@@ -341,7 +342,7 @@ class IssueModel(BaseModel):
     issue_summary = db.Column(db.String(), nullable=False)
     issue_description = db.Column(db.String(), nullable=True)
     issue_status = db.Column(db.String(), nullable=False)
-    issue_resolution = db.Column(db.String(), nullable=True)
+    issue_resolution = db.Column(db.String(), nullable=False)
     issue_affected_version = db.Column(db.String(), nullable=True)
     issue_fixed_version = db.Column(db.String(), nullable=True)
     issue_assigned_to = db.Column(db.String(), nullable=True)
@@ -441,16 +442,22 @@ class IssueSchema(BaseSchema):
 
 
 ## ROUTES
-@bp.route("/issues", methods=["GET"])
+@bp.route("/issues", methods=["GET", "POST"])
 def issues_route():
-    # TODO: implement pagination
-    # TODO: validate params
-    params = dict(request.args)
-    query = db.session.query(IssueModel)
-    if params:
-        query = query.filter_by(**params)
-    result = query.all()
-    return Reply.success(data=IssueSchema(many=True).dump(result))
+    if request.method == "GET":
+        # TODO: implement pagination
+        # TODO: validate params
+        params = dict(request.args)
+        query = db.session.query(IssueModel)
+        if params:
+            query = query.filter_by(**params)
+        result = query.all()
+        return Reply.success(data=IssueSchema(many=True).dump(result))
+    elif request.method == "POST":
+        obj = IssueSchema().load(request.get_json())
+        db.session.add(obj)
+        db.session.commit()
+        return Reply.success(IssueSchema().dump(obj))
 
 
 @bp.route("/issues/<string:issue_name>", methods=["GET"])

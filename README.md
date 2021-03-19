@@ -89,14 +89,13 @@
 - `/issues`: browse all tickets
 - `/issues/{ticket}`: view details of a specific ticket
 - `/dashboard`: Kanban board
-- `/metrics`: statistics on outstanding issues, resolution times, etc..
+- `/metrics`: grafana dashboard
 
 ---
 
 ### UI Components
 - auth provider/login page
 - admin panel with separate data tables for each SQL table & editing capability
-- ~~new issue page component for creation~~
 - comment creation component with markdown support
 - loading spinner on all page components
 - activity children components for each activity_type
@@ -107,6 +106,7 @@
 - use url params in /issues table to set view (closed/open issues, pageNo, rowsPerPage)
 - generic activity component which handles all activity types
 - new issue submission logic, toast notification with link to single issue
+- add `links` object to response which returns pagination params and issue url
 
 ---
 

@@ -1,10 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import Form from 'react-bootstrap/Form';
 import Button from 'react-bootstrap/Button';
 import styled, { css } from 'styled-components';
 
+import { request } from '../../Requests';
+import ToastNotification from '../atoms/ToastNotification';
+import IssueNameLink from '../atoms/IssueNameLink';
+
 const StyledLabel = styled(Form.Label)`
+  font-size: 0.85rem;
   &:after {
     ${(props) =>
       props.required &&
@@ -31,14 +36,20 @@ const ClickableText = styled.span`
 
 const defaultProps = {
   user: null,
+  projects: {},
+  route: `/issues`,
 };
 
 export default function IssueForm(props) {
   const { user } = props;
+  // This response is the top-level server response,
+  // response body is set under the .data property
+  const [response, setResponse] = useState({});
 
-  const { register, handleSubmit, setValue, errors } = useForm({
+  const { register, handleSubmit, setValue, reset, errors } = useForm({
     defaultValues: {
-      created_by: user, // set in field as defaultValue
+      created_by: user, // hidden
+      issue_status: 'OPEN', // hidden
       issue_project: null,
       issue_summary: null,
       issue_type: 'TASK',
@@ -49,18 +60,39 @@ export default function IssueForm(props) {
       issue_description: null,
     },
   });
-  const onSubmit = (data) => console.log(data);
+  const onSubmit = (data) => {
+    // TODO: cast empty strings to null
+    request({ route: props.route, method: 'POST', body: data }).then((json) => {
+      setResponse(json);
+      // Reset the form only if no errors are returned to avoid duplication
+      json.status === 'success' && reset();
+    });
+  };
 
   return (
     <React.Fragment>
+      {response.data && (
+        <ToastNotification
+          show={true}
+          variant={response.status}
+          body={<IssueNameLink {...response.data} />}
+        />
+      )}
       <h4>Create Issue</h4>
       <Form onSubmit={handleSubmit(onSubmit)}>
         {/* HIDDEN FIELDS */}
         <Form.Group>
           <Form.Control
             name="created_by"
+            size="sm"
             type="text"
-            defaultValue={user}
+            ref={register}
+            hidden
+          />
+          <Form.Control
+            name="issue_status"
+            size="sm"
+            type="text"
             ref={register}
             hidden
           />
@@ -70,6 +102,7 @@ export default function IssueForm(props) {
           <StyledLabel required>Project</StyledLabel>
           <Form.Control
             name="issue_project"
+            size="sm"
             as="select"
             ref={register({ required: true })}
           >
@@ -83,6 +116,7 @@ export default function IssueForm(props) {
           <StyledLabel required>Summary</StyledLabel>
           <Form.Control
             name="issue_summary"
+            size="sm"
             type="text"
             ref={register({ required: true })}
           />
@@ -93,8 +127,9 @@ export default function IssueForm(props) {
         <Form.Group>
           <StyledLabel required>Type</StyledLabel>
           <Form.Control
-            as="select"
             name="issue_type"
+            size="sm"
+            as="select"
             ref={register({ required: true })}
           >
             <option value="BUG">Bug</option>
@@ -111,8 +146,9 @@ export default function IssueForm(props) {
         <Form.Group>
           <StyledLabel required>Priority</StyledLabel>
           <Form.Control
-            as="select"
             name="issue_priority"
+            size="sm"
+            as="select"
             ref={register({ required: true })}
           >
             <option value="1">1 - Highest</option>
@@ -129,6 +165,7 @@ export default function IssueForm(props) {
           <StyledLabel required>Story Points</StyledLabel>
           <Form.Control
             name="issue_story_points"
+            size="sm"
             type="number"
             ref={register({ required: true })}
           />
@@ -140,26 +177,46 @@ export default function IssueForm(props) {
           <StyledLabel>Affected Version/s</StyledLabel>
           <Form.Control
             name="issue_affected_version"
+            size="sm"
             type="text"
             ref={register}
           />
         </Form.Group>
         <Form.Group>
-          <StyledLabel>Assigned User</StyledLabel>
-          <ClickableText
-            className="ml-3"
-            onClick={() => setValue('issue_assigned_to', user)}
-          >
-            Assign To Me
-          </ClickableText>
-          <Form.Control name="issue_assigned_to" type="text" ref={register} />
+          <StyledLabel required>Reported By</StyledLabel>
+          <Form.Control
+            name="created_by"
+            size="sm"
+            defaultValue={user}
+            type="text"
+            ref={register({ required: true })}
+          />
+        </Form.Group>
+        <Form.Group>
+          <StyledLabel>
+            Assigned User{' '}
+            <ClickableText
+              className="ml-3"
+              onClick={() => setValue('issue_assigned_to', user)}
+            >
+              Assign To Me
+            </ClickableText>
+          </StyledLabel>
+
+          <Form.Control
+            name="issue_assigned_to"
+            size="sm"
+            type="text"
+            ref={register}
+          />
         </Form.Group>
         <Form.Group>
           <StyledLabel>Description</StyledLabel>
           <Form.Control
             name="issue_description"
+            size="sm"
             as="textarea"
-            rows={3}
+            rows={2}
             ref={register}
           />
         </Form.Group>

@@ -14,7 +14,7 @@ import Button from 'react-bootstrap/Button';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './static/css/style.css';
 
-import { API_ROOT } from './Constants';
+import { APP_NAME, API_ROOT, ENV } from './Constants';
 import Page from './components/pages/Page';
 import IssueDetail from './components/pages/IssueDetail';
 import IssueTable from './components/pages/IssueTable';
@@ -22,12 +22,14 @@ import Dashboard from './components/pages/Dashboard';
 import Metrics from './components/pages/Metrics';
 import IssueForm from './components/pages/IssueForm';
 
+console.log(`ENV: ${ENV}`);
+
 function getIssues() {
   return fetch(`${API_ROOT}/issues`).then((response) => response.json());
 }
 
 export default function App() {
-  const [user, setUser] = useState(``);
+  const [user, setUser] = useState(`adam@example.com`);
   const [issues, setIssues] = useState([]);
 
   useEffect(() => {
@@ -113,7 +115,7 @@ export default function App() {
     <Router>
       <Navbar bg="dark" variant="dark" className="mb-0">
         <Navbar.Brand as={Link} to="/">
-          Ticketing System
+          {APP_NAME}
         </Navbar.Brand>
         <Navbar.Collapse>
           <Nav className="mr-auto">
