@@ -59,6 +59,7 @@ class BaseConfig:
     DEBUG = False
     LOG_FILE = None
     LOG_LEVEL = "INFO"
+    THROTTLE_MS = 0
     SECRET_KEY = "begaydocrime"
     SQLALCHEMY_DATABASE_URI = "sqlite:///database.db"
     SQLALCHEMY_TRACK_MODIFICATIONS = False
@@ -77,6 +78,7 @@ class TestingConfig(BaseConfig):
 class DevelopmentConfig(BaseConfig):
     ENV = "development"
     DEBUG = True
+    THROTTLE_MS = 100
 
 
 class DockerConfig(BaseConfig):
@@ -158,13 +160,18 @@ def create_app(script_info):
     app.url_map.strict_slashes = False
     # init_app
     CORS(app)
-    # import db, ma
+    # import db, ma, auth
     db.init_app(app)
     ma.init_app(app)
     # calling 'api.init_app(app)' is not required
     app.register_blueprint(bp, url_prefix="/api")
 
-    ## OVERHEAD
+    ## HANDLERS
+    @auth.error_handler
+    def handle_auth_error(e):
+        log.error(e)
+        return Reply.unauthorized(message="Invalid or expired credentials")
+
     @app.errorhandler(404)
     def handle_not_found(e):
         return Reply.missing(message=str(e))
@@ -183,13 +190,18 @@ def create_app(script_info):
 
     @app.before_request
     def before_request():
-        # this timestamp is read before returning the response and
-        # allows us to track how long the request was processed for.
-        # NOTE: this may remove immutability in subsequent handling
+        """
+        this timestamp is read before returning the response and
+        allows us to track how long the request was processed for.
+        NOTE: this may remove immutability in subsequent handling
+        """
         headers = Headers(
             [(app.config["TS_TIMER_HEADER_START"], make_time()), *request.headers]
         )
         request.headers = headers
+        # If throttling is enabled, add MS deadlock to each request.
+        if app.config.get("THROTTLE_MS", 0):
+            time.sleep(app.config["THROTTLE_MS"] / 1000)
 
     return app
 
@@ -286,6 +298,12 @@ class Reply(object):
     def missing(cls, data=None, message=None):
         return cls._base_reply(
             data=data, message=message, status="missing", response=404
+        )
+
+    @classmethod
+    def unauthorized(cls, data=None, message=None):
+        return cls._base_reply(
+            data=data, message=message, status="unauthorized", response=401
         )
 
 

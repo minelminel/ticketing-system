@@ -22,6 +22,7 @@ import IssueTable from './components/pages/IssueTable';
 import Dashboard from './components/pages/Dashboard';
 import Metrics from './components/pages/Metrics';
 import IssueForm from './components/pages/IssueForm';
+import UserLoginForm from './components/molecules/UserLoginForm';
 
 console.log(`ENV: ${ENV}`);
 
@@ -31,9 +32,12 @@ export default function App() {
   const [token, setToken] = useState(null);
   // data
   const [issues, setIssues] = useState([]);
-  // view
-  const [loading, setLoading] = useState(false);
 
+  /**
+   * Perform the initial loading of data from the API, using
+   * hooks to avoid a loop of fetch/render. Functionally
+   * equivalent to using React.Component#constructor
+   */
   useEffect(() => {
     let mounted = true;
     request({ route: '/issues', method: 'GET' }).then((issues) => {
@@ -44,79 +48,47 @@ export default function App() {
     return () => (mounted = false);
   }, []);
 
+  /**
+   * Called when user login succeeds from the UserLoginForm.
+   * Failed validation is handled within the component,
+   * this method is only called after a successful operation.
+   */
+  const handleUserLogin = (response) => {
+    setUser(response.data.username);
+    setToken(response.data.token);
+  };
+
+  const handleUserLogout = () => {
+    // prompt for confirmation
+    const confirmed = window.confirm(`Are you sure you want to log out?`);
+    if (confirmed) {
+      setUser(null);
+      setToken(null);
+    }
+  };
+
+  /**
+   * If the user/token is not set, display a login form.
+   * IF the user/token is set, display a logout button.
+   */
   const HomeRoute = () => {
     return (
-      <Page fluid={false} className="full-height" loading={loading}>
-        <h4>Home Page</h4>
-        <pre>{JSON.stringify({ user, token }, null, 2)}</pre>
-        {user ? (
-          <fieldset>
-            <legend>LOGOUT</legend>
-            <input
-              type="button"
-              value="Logout"
-              onClick={() => {
-                setLoading(true);
-                setUser(null);
-                setToken(null);
-                setLoading(false);
-              }}
-            />
-          </fieldset>
+      <Page fluid={false}>
+        {!token || !user ? (
+          <UserLoginForm
+            style={{
+              position: 'relative',
+              width: '50%',
+              marginTop: '20%',
+              marginLeft: '25%',
+              padding: '2rem',
+              boxShadow: '0 0 10px var(--secondary)',
+              borderRadius: '10px',
+            }}
+            onSuccess={(data) => handleUserLogin(data)}
+          />
         ) : (
-          <fieldset>
-            <legend>LOGIN</legend>
-            <form
-              onSubmit={(event) => {
-                // page actions
-                setLoading(true);
-                event.preventDefault();
-                // extract the fields
-                const username = event.target.username.value;
-                const password = event.target.password.value;
-                const aotb = btoa(username + ':' + password);
-                console.log(
-                  `username=${username} password=${password} btoa=${aotb}`,
-                );
-                // fire the request
-                request({
-                  route: '/auth/token',
-                  method: 'GET',
-                  headers: { Authorization: `Basic ${aotb}` },
-                }).then((json) => {
-                  setUser(json.data.username);
-                  setToken(json.data.token);
-                  setLoading(false);
-                });
-              }}
-            >
-              <label htmlFor="username" className="mr-2">
-                Username
-              </label>
-              <input
-                name="username"
-                id="username"
-                defaultValue="michael"
-                placeholder="Enter username..."
-                type="text"
-                required
-              />
-              <br />
-              <label htmlFor="password" className="mr-2">
-                Password
-              </label>
-              <input
-                name="password"
-                id="password"
-                defaultValue="hello"
-                placeholder="Enter password..."
-                type="password"
-                required
-              />
-              <br />
-              <input type="submit" value="Submit" />
-            </form>
-          </fieldset>
+          <div>This is only visible when a user is logged in</div>
         )}
       </Page>
     );
@@ -210,13 +182,29 @@ export default function App() {
                 Metrics
               </Nav.Link>
             </NavItem>
+            <NavItem href={ROUTES.CREATE}>
+              <Nav.Link as={Link} to={ROUTES.CREATE}>
+                + New Issue
+              </Nav.Link>
+            </NavItem>
           </Nav>
+          {/* This is super janky and just a temporary way to visibly check when credentials are persisted */}
           <NavItem style={{ color: 'var(--light)' }} className="mr-3">
-            {user ? user : 'Not logged in'}
+            <span className="mr-3">{user ? `${user}` : '(no user)'}</span>
+            <span className="mr-3">
+              {token ? `${token.substring(0, 10)}...` : '(no token)'}
+            </span>
           </NavItem>
-          <NavItem href={ROUTES.CREATE}>
-            <Nav.Link as={Link} to={ROUTES.CREATE}>
-              <Button size="sm">+ New Issue</Button>
+          {/* End janky horribleness */}
+          <NavItem href={ROUTES.HOME}>
+            <Nav.Link as={Link} to={ROUTES.HOME}>
+              {user ? (
+                <Button onClick={handleUserLogout} size="sm">
+                  Log Out
+                </Button>
+              ) : (
+                <Button size="sm">Log In</Button>
+              )}
             </Nav.Link>
           </NavItem>
         </Navbar.Collapse>

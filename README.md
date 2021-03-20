@@ -199,3 +199,4 @@ SELECT COUNT(*) FILTER (WHERE issue_type LIKE '%TASK%') AS "TASK" FROM issues;
 
 ### Notes
 
+- https://soshace.com/react-user-login-authentication-using-usecontext-and-usereducer/

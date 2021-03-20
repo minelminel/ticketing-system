@@ -1,6 +1,16 @@
 /* Requests.jsx */
 import { API_ROOT } from './Constants';
 
+/**
+ * Convenience function for creating the properly formatted
+ * authentication headers necessary for all API requests.
+ */
+export function encodeAuthHeaders(username, password) {
+  const aotb = btoa(username + ':' + password);
+  // console.log(`username=${username} password=${password} btoa=${aotb}`);
+  return { Authorization: `Basic ${aotb}` };
+}
+
 export async function request(options) {
   const route = options.route ? options.route : '';
   const method = options.method ? options.method.toUpperCase() : 'GET';

@@ -1,6 +1,6 @@
 import React from 'react';
 import Container from 'react-bootstrap/Container';
-import Spinner from 'react-bootstrap/Spinner';
+import LoadingSpinner from '../atoms/LoadingSpinner';
 
 const defaultProps = {
   className: ``,
@@ -17,17 +17,7 @@ export default function Page(props) {
       className={props.className}
       style={props.style}
     >
-      {props.loading && (
-        <Spinner
-          style={{
-            position: 'absolute',
-            top: '50%',
-            right: '50%',
-          }}
-          animation="border"
-          size="lg"
-        />
-      )}
+      <LoadingSpinner loading={props.loading} />
       {props.children}
     </Container>
   );
