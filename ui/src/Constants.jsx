@@ -28,3 +28,16 @@ export const GRAFANA_ROOT =
   ENV === `development`
     ? `http://localhost:3001/?orgId=1`
     : `http://localhost:8080/grafana/?orgId=1`;
+
+/**
+ * Single source of truth for ReactRouter page routes
+ */
+export const ROUTES = {
+  HOME: `/`,
+  ISSUES: `/issues`,
+  DASHBOARD: `/dashboard`,
+  METRICS: `/metrics`,
+  CREATE: `/create`,
+  LOGIN: `/login`,
+  REGISTER: `/register`,
+};

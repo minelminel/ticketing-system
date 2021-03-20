@@ -1,5 +1,12 @@
 # Ticketing System
 
+### Roadmap
+
+- Back token authentication with Redis store using auto-expire keys
+- Convert database Models to entirely integer-based Enums with auto de/serialization within Schemas
+
+---
+
 ### Table Schemas
 
 `CREATE TABLE issues`
@@ -97,6 +104,7 @@
 - `/`: homepage
 - `/auth/register`: new user creation
 - `/auth/token`: token generation
+- `/auth/validate`: token validation (debugging)
 - `/dashboard`: Kanban board
 - `/metrics`: grafana dashboard
 - `/create`: submit a new issue
@@ -152,9 +160,3 @@ SELECT COUNT(*) FILTER (WHERE issue_type LIKE '%TASK%') AS "TASK" FROM issues;
 
 ### Notes
 
-```js
-const query = new URLSearchParams({foo: 1, bar: true, zed: 'maybe'}).toString()
-const url = `http://example.com${query ? '?' + query : ''}`
-console.log(url)
-// http://example.com?foo=1&bar=true&zed=maybe
-```

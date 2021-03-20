@@ -14,7 +14,7 @@ import Button from 'react-bootstrap/Button';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './static/css/style.css';
 
-import { APP_NAME, API_ROOT, ENV } from './Constants';
+import { APP_NAME, ENV, ROUTES } from './Constants';
 import { request } from './Requests';
 import Page from './components/pages/Page';
 import IssueDetail from './components/pages/IssueDetail';
@@ -26,8 +26,13 @@ import IssueForm from './components/pages/IssueForm';
 console.log(`ENV: ${ENV}`);
 
 export default function App() {
-  const [user, setUser] = useState(`adam@example.com`);
+  // auth
+  const [user, setUser] = useState(null);
+  const [token, setToken] = useState(null);
+  // data
   const [issues, setIssues] = useState([]);
+  // view
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -41,8 +46,78 @@ export default function App() {
 
   const HomeRoute = () => {
     return (
-      <Page className="full-height">
+      <Page fluid={false} className="full-height" loading={loading}>
         <h4>Home Page</h4>
+        <pre>{JSON.stringify({ user, token }, null, 2)}</pre>
+        {user ? (
+          <fieldset>
+            <legend>LOGOUT</legend>
+            <input
+              type="button"
+              value="Logout"
+              onClick={() => {
+                setLoading(true);
+                setUser(null);
+                setToken(null);
+                setLoading(false);
+              }}
+            />
+          </fieldset>
+        ) : (
+          <fieldset>
+            <legend>LOGIN</legend>
+            <form
+              onSubmit={(event) => {
+                // page actions
+                setLoading(true);
+                event.preventDefault();
+                // extract the fields
+                const username = event.target.username.value;
+                const password = event.target.password.value;
+                const aotb = btoa(username + ':' + password);
+                console.log(
+                  `username=${username} password=${password} btoa=${aotb}`,
+                );
+                // fire the request
+                request({
+                  route: '/auth/token',
+                  method: 'GET',
+                  headers: { Authorization: `Basic ${aotb}` },
+                }).then((json) => {
+                  setUser(json.data.username);
+                  setToken(json.data.token);
+                  setLoading(false);
+                });
+              }}
+            >
+              <label htmlFor="username" className="mr-2">
+                Username
+              </label>
+              <input
+                name="username"
+                id="username"
+                defaultValue="michael"
+                placeholder="Enter username..."
+                type="text"
+                required
+              />
+              <br />
+              <label htmlFor="password" className="mr-2">
+                Password
+              </label>
+              <input
+                name="password"
+                id="password"
+                defaultValue="hello"
+                placeholder="Enter password..."
+                type="password"
+                required
+              />
+              <br />
+              <input type="submit" value="Submit" />
+            </form>
+          </fieldset>
+        )}
       </Page>
     );
   };
@@ -72,7 +147,6 @@ export default function App() {
   };
 
   const DashboardRoute = () => {
-    // TODO: filter by assignment
     return (
       <Page className="mt-2">
         <Dashboard user={user} data={issues.data} />
@@ -111,28 +185,28 @@ export default function App() {
   return (
     <Router>
       <Navbar bg="dark" variant="dark" className="mb-0">
-        <Navbar.Brand as={Link} to="/">
+        <Navbar.Brand as={Link} to={ROUTES.HOME}>
           {APP_NAME}
         </Navbar.Brand>
         <Navbar.Collapse>
           <Nav className="mr-auto">
-            <NavItem href="/">
-              <Nav.Link as={Link} to="/">
+            <NavItem href={ROUTES.HOME}>
+              <Nav.Link as={Link} to={ROUTES.HOME}>
                 Home
               </Nav.Link>
             </NavItem>
-            <NavItem href="/issues">
-              <Nav.Link as={Link} to="/issues">
+            <NavItem href={ROUTES.ISSUES}>
+              <Nav.Link as={Link} to={ROUTES.ISSUES}>
                 Issues
               </Nav.Link>
             </NavItem>
-            <NavItem href="/dashboard">
-              <Nav.Link as={Link} to="/dashboard">
+            <NavItem href={ROUTES.DASHBOARD}>
+              <Nav.Link as={Link} to={ROUTES.DASHBOARD}>
                 Dashboard
               </Nav.Link>
             </NavItem>
-            <NavItem href="/metrics">
-              <Nav.Link as={Link} to="/metrics">
+            <NavItem href={ROUTES.METRICS}>
+              <Nav.Link as={Link} to={ROUTES.METRICS}>
                 Metrics
               </Nav.Link>
             </NavItem>
@@ -140,8 +214,8 @@ export default function App() {
           <NavItem style={{ color: 'var(--light)' }} className="mr-3">
             {user ? user : 'Not logged in'}
           </NavItem>
-          <NavItem href="/create">
-            <Nav.Link as={Link} to="/create">
+          <NavItem href={ROUTES.CREATE}>
+            <Nav.Link as={Link} to={ROUTES.CREATE}>
               <Button size="sm">+ New Issue</Button>
             </Nav.Link>
           </NavItem>
@@ -150,11 +224,11 @@ export default function App() {
       {/* A <Switch> looks through its children <Route>s and
             renders the first one that matches the current URL. */}
       <Switch>
-        <Route path="/issues" component={IssuesRoute} />
-        <Route path="/dashboard" component={DashboardRoute} />
-        <Route path="/metrics" component={MetricsRoute} />
-        <Route path="/create" component={CreationRoute} />
-        <Route exact path="/" component={HomeRoute} />
+        <Route path={ROUTES.ISSUES} component={IssuesRoute} />
+        <Route path={ROUTES.DASHBOARD} component={DashboardRoute} />
+        <Route path={ROUTES.METRICS} component={MetricsRoute} />
+        <Route path={ROUTES.CREATE} component={CreationRoute} />
+        <Route exact path={ROUTES.HOME} component={HomeRoute} />
         <Route component={NotFoundRoute} />
       </Switch>
     </Router>

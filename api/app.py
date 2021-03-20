@@ -46,6 +46,7 @@ from flask_marshmallow import Marshmallow
 from passlib.apps import custom_app_context as password_context
 
 log = logging.getLogger(__name__)
+here = os.path.dirname(os.path.abspath(__file__))
 
 ENV_VAR_KEY = "FLASK_ENV"
 ENV_VAR_VAL = "development"
@@ -387,7 +388,7 @@ class UserModel(BaseModel):
             return None  # valid token, but expired
         except BadSignature:
             return None  # invalid token
-        user = db.session.query(UserModel).filter_by(data["id"]).first()
+        user = db.session.query(UserModel).filter_by(id=data["id"]).first()
         return user
 
 
@@ -662,7 +663,7 @@ def auth_register_route():
     return Reply.success(message=f"Welcome aboard, {username}")
 
 
-@bp.route("/auth/token")
+@bp.route("/auth/token", methods=["GET"])
 @auth.login_required
 def auth_token_route():
     """
@@ -672,7 +673,20 @@ def auth_token_route():
     the provider context.
     """
     token = g.user.generate_auth_token()
-    return Reply.success(data=dict(token=token.decode("ascii")))
+    return Reply.success(
+        data=dict(username=g.user.username, token=token.decode("ascii"))
+    )
+
+
+@bp.route("/auth/validate", methods=["GET"])
+@auth.login_required
+def auth_validate_route():
+    """
+    Allow the user/service to validate their auth token.
+    Returns a 200 (success) if valid, else 401 (unauthorized)
+    Authentication logic is handled entirely by decorator.
+    """
+    return Reply.success()
 
 
 ## CLI
@@ -720,13 +734,13 @@ def cli_db_seed():
     """Injects mock data into tables"""
     log.info("Seeding database...")
     log.info(f"Writing table: {IssueModel.__tablename__}")
-    with open("./data/issues.json", "r") as file:
+    with open(os.path.join(here, "data", "issues.json"), "r") as file:
         issues = json.load(file)
     for each in issues:
         db.session.add(IssueSchema().load(each))
         db.session.commit()
     log.info(f"Writing table: {ActivityModel.__tablename__}")
-    with open("./data/activity.json", "r") as file:
+    with open(os.path.join(here, "data", "activity.json"), "r") as file:
         activity = json.load(file)
     for each in activity:
         db.session.add(ActivitySchema().load(each))

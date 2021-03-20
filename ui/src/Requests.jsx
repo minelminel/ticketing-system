@@ -8,6 +8,9 @@ export async function request(options) {
   const params = options.params
     ? new URLSearchParams(options.params).toString()
     : '';
+  const headers = options.headers
+    ? options.headers
+    : { 'Content-Type': 'application/json' };
   // Default options are marked with *
   const url = params ? `${API_ROOT}${route}?${params}` : `${API_ROOT}${route}`;
   console.log(`[request:send] url=${url} method=${method}`);
@@ -20,9 +23,7 @@ export async function request(options) {
     cache: 'no-cache',
     // include, *same-origin, omit
     credentials: 'same-origin',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: headers,
     // manual, *follow, error
     redirect: 'follow',
     // no-referrer, *no-referrer-when-downgrade, origin, origin-when-cross-origin, same-origin, strict-origin, strict-origin-when-cross-origin, unsafe-url
