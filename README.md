@@ -1,17 +1,44 @@
 # Ticketing System
 
+### Overview
+
+Jira-inspired issue & ticket tracker. Current features include new issue creation/editing, issue commenting & automatic update tracking, backlog browsing with filter/group/sort functionality, user authentication & session persistence, and metric visualizations.
+
+### Technology Stack
+
+| Service | Framework | Module |
+|:--------|:----------|:-------|
+| Frontend | React | `ui` |
+| Backend | Flask | `api` |
+| Database | Postgres | `db` |
+| Monitoring | Grafana | `grafana` |
+| Proxy | Nginx | `proxy` |
+
+---
+
+### Screenshots
+
+![dashboard](diagrams/img/dashboard.png)
+
+![issues](diagrams/img/issues.png)
+
+![issue](diagrams/img/issue.png)
+
+---
+
 ### Roadmap
 
 - Back token authentication with Redis store using auto-expire keys
-- Convert database Models to entirely integer-based Enums with auto de/serialization within Schemas
+- Convert database Models to entirely integer-based Enums with auto de/serialization within Schemas, generate corresponding JS client Enums
+- OpenAPI-compliant backend with Swagger documentation for routes and models
 
 ---
 
 ### Table Schemas
 
-`CREATE TABLE issues`
+**`issues`**
 
-| column | type | possible values |
+| Column | Type | Possible Values |
 |:---|:---|:---|
 | id | `int` |  |
 | created_on | `bigint` |  |
@@ -32,9 +59,10 @@
 
 ---
 
-`CREATE TABLE activity` *many-to-one with `issues`*
+**`activity`**
+> Relationship: *many-to-one* with `issues`
 
-| column | type | possible values |
+| Column | Type | Possible Values |
 |:---|:---|:---|
 | id | `int` |  |
 | created_on | `bigint` |  |
@@ -47,23 +75,23 @@
 
 ---
 
-`CREATE TABLE users`
+**`users`**
 
-| column | type | possible values |
+| Column | Type | Possible Values |
 |:---|:---|:---|
 | id | `int` |  |
 | created_on | `bigint` |  |
 | updated_on | `bigint` |  |
-| created_by | `string` |  |
-| user_first_name | `string` |  |
-| user_last_name | `string` |  |
-| user_email | `string` |  |
-| user_password_hash | `string` |  |
-| user_type | `string` | ADMIN, USER |
+| username | `string` |  |
+| password | `hash[string]` |  |
+| user_email | `string` | ** TODO ** |
+| user_type | `string` | ** TODO ** ADMIN, USER |
 
-`ENUMS`
+---
 
-| table_name | table_column | name | value |
+**`enums`**
+
+| Table Name | Table Column | Name | Value |
 |:---|:---|:---|:---|
 | issues | issue_type | UNKNOWN | 0 |
 | issues | issue_type | BUG | 1 |
@@ -99,21 +127,32 @@
 
 ---
 
-### Endpoints
+### UI Routes
 
 - `/`: homepage
-- `/auth/register`: new user creation
-- `/auth/token`: token generation
-- `/auth/validate`: token validation (debugging)
+- `/register`: token generation
+- `/login`: new user creation
 - `/dashboard`: Kanban board
 - `/metrics`: grafana dashboard
 - `/create`: submit a new issue
 - `/issues`: browse all tickets
 - `/issues/{ticket}`: view details of a specific ticket
-- `/users`: browse all users **(protected)**
-- `/users/{user}`: view details of a specific user **(protected)**
-- `/projects`: browse all projects **(roadmap)**
-- `/projects/{project}`: view details of a specific project **(roadmap)**
+- `/users`: browse all users **(TODO)**
+- `/users/{user}`: view details of a specific user **(TODO)**
+- `/projects`: browse all projects **(TODO)**
+- `/projects/{project}`: view details of a specific project **(TODO)**
+
+### API Routes
+
+- `/api/auth/register`: new user creation
+- `/api/auth/token`: token generation
+- `/api/auth/validate`: token validation **(debugging)**
+- `/api/issues`: browse all tickets
+- `/api/issues/{ticket}`: view details of a specific ticket
+- `/api/users`: browse all users **(TODO)**
+- `/api/users/{user}`: view details of a specific user **(TODO)**
+- `/api/projects`: browse all projects **(TODO)**
+- `/api/projects/{project}`: view details of a specific project **(TODO)**
 
 ---
 
