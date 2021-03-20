@@ -4,8 +4,9 @@ TODO:
 - split blueprints for issues, activity, auth
 - use flask.cli.AppGroup for db subcommands
 - use foreign key for user fields rather than static string
+- add backrefs to db entries to delete foreign relations
 """
-import os, sys, json, time, datetime, logging, traceback
+import os, sys, json, time, secrets, datetime, logging, traceback
 from enum import Enum
 from itertools import chain
 
@@ -19,6 +20,13 @@ from flask import (
     request,
     jsonify,
     make_response,
+    g,
+)
+from flask_httpauth import HTTPBasicAuth
+from itsdangerous import (
+    TimedJSONWebSignatureSerializer as Serializer,
+    BadSignature,
+    SignatureExpired,
 )
 from flask_restful import Api, Resource
 from werkzeug.datastructures import Headers
@@ -35,6 +43,7 @@ from marshmallow import (
     EXCLUDE,
 )
 from flask_marshmallow import Marshmallow
+from passlib.apps import custom_app_context as password_context
 
 log = logging.getLogger(__name__)
 
@@ -46,9 +55,10 @@ os.environ.setdefault(ENV_VAR_KEY, ENV_VAR_VAL)
 class BaseConfig:
     ENV = None
     TESTING = False
-    DEBUG = True
+    DEBUG = False
     LOG_FILE = None
     LOG_LEVEL = "INFO"
+    SECRET_KEY = "begaydocrime"
     SQLALCHEMY_DATABASE_URI = "sqlite:///database.db"
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     TS_ISSUE_NUMBER_PADDING = 4
@@ -59,23 +69,24 @@ class BaseConfig:
 class TestingConfig(BaseConfig):
     ENV = "testing"
     TESTING = True
+    DEBUG = True
     SQLALCHEMY_DATABASE_URI = "sqlite:///:memory:"
 
 
 class DevelopmentConfig(BaseConfig):
     ENV = "development"
-    DEBUG = False
+    DEBUG = True
 
 
 class DockerConfig(BaseConfig):
     ENV = "docker"
-    DEBUG = False
     # dialect+driver://username:password@host:port/database
     SQLALCHEMY_DATABASE_URI = f"postgresql://postgres:postgres@db:5432"
 
 
 class ProductionConfig(BaseConfig):
     ENV = "production"
+    SECRET_KEY = secrets.token_hex(16)
 
 
 def create_app(script_info):
@@ -157,6 +168,12 @@ def create_app(script_info):
     def handle_not_found(e):
         return Reply.missing(message=str(e))
 
+    @app.errorhandler(ValidationError)
+    def handle_validationerror(e):
+        log.error(e)
+        log.error(traceback.print_exc())
+        return Reply.error(message=str(e))
+
     @app.errorhandler(Exception)
     def handle_exception(e):
         log.error(e)
@@ -181,9 +198,29 @@ bp = Blueprint("api", __name__)
 # api = Api(bp); api.add_resource(<class>, <route>)
 db = SQLAlchemy()
 ma = Marshmallow()
-
+auth = HTTPBasicAuth()
 
 ## UTILS
+@auth.verify_password
+def verify_password(username_or_token, password):
+    """
+    Decorate protected routes using @auth.verify_password
+    """
+    log.info(f"Trying token authentication: {username_or_token}")
+    user = UserModel.verify_auth_token(username_or_token)
+    if not user:
+        log.info(
+            f"Token authentication failed, trying username/password: {username_or_token}"
+        )
+        user = db.session.query(UserModel).filter_by(username=username_or_token).first()
+        if not user or not user.verify_password(password):
+            log.info("Username/password authentication failed, denying access")
+            return False
+    log.info(f"Authentication succeeded, granting access: username={user.username}")
+    g.user = user
+    return True
+
+
 def make_time():
     return int(datetime.datetime.now().timestamp() * 1000)
 
@@ -318,17 +355,46 @@ class ActivityTypeEnum(ExtendedEnum):
 class BaseModel(db.Model):
     __abstract__ = True
     id = db.Column(db.Integer(), primary_key=True, unique=True)
-    created_by = db.Column(db.String(), nullable=False)
     created_at = db.Column(db.BigInteger(), default=make_time, nullable=False)
     updated_at = db.Column(
         db.BigInteger(), default=None, onupdate=make_time, nullable=True
     )
 
 
+class UserModel(BaseModel):
+    __tablename__ = "users"
+
+    username = db.Column(db.String(32), index=True)
+    password = db.Column(db.String(128))
+
+    def hash_password(self, password):
+        print(f"Hashing Password: {password}")
+        self.password = password_context.encrypt(password)
+
+    def verify_password(self, password):
+        return password_context.verify(password, self.password)
+
+    def generate_auth_token(self, expiration=600):
+        s = Serializer(current_app.config["SECRET_KEY"], expires_in=expiration)
+        return s.dumps(dict(id=self.id))
+
+    @staticmethod
+    def verify_auth_token(token):
+        s = Serializer(current_app.config["SECRET_KEY"])
+        try:
+            data = s.loads(token)
+        except SignatureExpired:
+            return None  # valid token, but expired
+        except BadSignature:
+            return None  # invalid token
+        user = db.session.query(UserModel).filter_by(data["id"]).first()
+        return user
+
+
 class ActivityModel(BaseModel):
     __tablename__ = "activity"
     # __table__args__ = (db.ForeignKeyConstraint(["issue_id"], ["issues.id"]))
-
+    created_by = db.Column(db.String(), nullable=False)
     issue_id = db.Column(db.Integer(), db.ForeignKey("issues.id"), nullable=False)
     activity_type = db.Column(db.String(), nullable=False)
     activity_text = db.Column(db.String(), nullable=True)
@@ -337,6 +403,7 @@ class ActivityModel(BaseModel):
 class IssueModel(BaseModel):
     __tablename__ = "issues"
 
+    created_by = db.Column(db.String(), nullable=False)
     issue_project = db.Column(db.String(), nullable=False)
     issue_name = db.Column(db.String(), nullable=False)
     issue_type = db.Column(db.String(), nullable=False)
@@ -379,6 +446,21 @@ class BaseSchema(ma.SQLAlchemyAutoSchema):
         for field in nested_fields.values():
             field.schema.session = self.session
         return data
+
+
+class UserSchema(BaseSchema):
+    class Meta(BaseSchema.Meta):
+        model = UserModel
+
+    id = fields.Int(dump_only=True)
+    created_at = fields.Int(dump_only=True)
+    updated_at = fields.Int(dump_only=True)
+    username = fields.Str(
+        required=True, allow_none=False, validate=validate.Length(max=32)
+    )
+    password = fields.Str(
+        required=True, allow_none=False, validate=validate.Length(max=128)
+    )
 
 
 class ActivitySchema(BaseSchema):
@@ -557,6 +639,40 @@ def activity_route():
         db.session.add(obj)
         db.session.commit()
         return Reply.success(ActivitySchema().dump(obj))
+
+
+@bp.route("/auth/register", methods=["POST"])
+def auth_register_route():
+    # Register new users
+    # TODO: use database constraints to determine collision automatically
+    username = request.get_json().get("username")
+    password = request.get_json().get("password")
+
+    if username is None or password is None:
+        return Reply.error(message="Missing username and/or password")
+
+    if db.session.query(UserModel).filter_by(username=username).first() is not None:
+        return Reply.error(message="Username already exists")
+
+    user = UserModel(username=username)
+    user.hash_password(password)
+    db.session.add(user)
+    db.session.commit()
+    log.info(f"Created new user: {username}")
+    return Reply.success(message=f"Welcome aboard, {username}")
+
+
+@bp.route("/auth/token")
+@auth.login_required
+def auth_token_route():
+    """
+    Grant registered users an authentication token to be used
+    in subsequent requests. Any `logout` feature should be
+    implemented client-side by deleting the auth token from
+    the provider context.
+    """
+    token = g.user.generate_auth_token()
+    return Reply.success(data=dict(token=token.decode("ascii")))
 
 
 ## CLI

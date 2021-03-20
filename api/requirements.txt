@@ -6,6 +6,8 @@ flask-marshmallow
 flask-CORS
 marshmallow-sqlalchemy
 psycopg2-binary
+passlib
+flask-httpauth
 # dev
 black
 tabulate

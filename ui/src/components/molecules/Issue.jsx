@@ -4,6 +4,7 @@ import Icon from '@material-ui/core/Icon';
 import Toast from 'react-bootstrap/Toast';
 import Table from 'react-bootstrap/Table';
 import styled from 'styled-components';
+import MDEditor from '@uiw/react-md-editor';
 
 import IssueNameLink from '../atoms/IssueNameLink';
 import ActivityItem from '../atoms/ActivityItem';
@@ -171,7 +172,7 @@ function DescriptionPanel(props) {
   return (
     <details open={true}>
       <Summary>Description</Summary>
-      <p>{issue_description || `No description`}</p>
+      <MDEditor.Markdown source={issue_description} />
     </details>
   );
 }

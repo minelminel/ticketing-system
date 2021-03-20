@@ -7,18 +7,18 @@
 | column | type | possible values |
 |:---|:---|:---|
 | id | `int` |  |
-| created_on | `int` |  |
-| updated_on | `int` |  |
+| created_on | `bigint` |  |
+| updated_on | `bigint` |  |
 | created_by | `string` |  |
 | issue_name | `string` |  |
 | issue_project | `string` |  |
-| issue_type | `enum` | bug, task, feature, requirement, support, epic |
+| issue_type | `enum` | BUG, TASK, FEATURE, REQUIREMENT, SUPPORT, EPIC |
 | issue_priority | `enum` | 1, 2, 3, 4, 5 |
 | issue_story_points | `int` |  |
 | issue_summary | `string` |  |
 | issue_description | `string` |  |
-| issue_status | `enum` | open, assigned, in_progress, on_hold, under_review, done, released |
-| issue_resolution | `enum` | invalid, wont_fix, overcome_by_events, unable_to_replicate, duplicate, complete |
+| issue_status | `enum` | OPEN, ASSIGNED, IN_PROGRESS, ON_HOLD, UNDER_REVIEW, DONE, RELEASED |
+| issue_resolution | `enum` | INVALID, WONT_FIX, OVERCOME_BY_EVENTS, UNABLE_TO_REPLICATE, DUPLICATE, COMPLETE |
 | issue_affected_version | `string` |  |
 | issue_fixed_version | `string` |  |
 | issue_assigned_to | `string` |  |
@@ -30,19 +30,29 @@
 | column | type | possible values |
 |:---|:---|:---|
 | id | `int` |  |
-| created_on | `int` |  |
-| updated_on | `int` |  |
+| created_on | `bigint` |  |
+| updated_on | `bigint` |  |
 | created_by | `string` |  |
 | issue_id | `int` |  |
-| issue_name | `string` |  |
-| activity_type | `enum` | comment, assignment, status, resolution |
+| issue_name | `string` | ** TODO ** |
+| activity_type | `enum` | COMMENT, ASSIGNMENT, STATUS, RESOLUTION |
 | activity_text | `string` |  |
 
 ---
 
 `CREATE TABLE users`
 
-**TODO**
+| column | type | possible values |
+|:---|:---|:---|
+| id | `int` |  |
+| created_on | `bigint` |  |
+| updated_on | `bigint` |  |
+| created_by | `string` |  |
+| user_first_name | `string` |  |
+| user_last_name | `string` |  |
+| user_email | `string` |  |
+| user_password_hash | `string` |  |
+| user_type | `string` | ADMIN, USER |
 
 `ENUMS`
 
@@ -80,32 +90,34 @@
 | users | user_type | ADMIN | 1 |
 | users | user_type | USER | 2 |
 
-
 ---
 
 ### Endpoints
 
 - `/`: homepage
-- `/issues`: browse all tickets
-- `/issues/{ticket}`: view details of a specific ticket
+- `/auth/register`: new user creation
+- `/auth/token`: token generation
 - `/dashboard`: Kanban board
 - `/metrics`: grafana dashboard
+- `/create`: submit a new issue
+- `/issues`: browse all tickets
+- `/issues/{ticket}`: view details of a specific ticket
+- `/users`: browse all users **(protected)**
+- `/users/{user}`: view details of a specific user **(protected)**
+- `/projects`: browse all projects **(roadmap)**
+- `/projects/{project}`: view details of a specific project **(roadmap)**
 
 ---
 
 ### UI Components
 - auth provider/login page
 - admin panel with separate data tables for each SQL table & editing capability
-- comment creation component with markdown support
 - loading spinner on all page components
-- activity children components for each activity_type
 
 ---
 
 ### TODO
 - use url params in /issues table to set view (closed/open issues, pageNo, rowsPerPage)
-- generic activity component which handles all activity types
-- new issue submission logic, toast notification with link to single issue
 - add `links` object to response which returns pagination params and issue url
 
 ---
