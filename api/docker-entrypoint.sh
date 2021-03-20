@@ -8,6 +8,11 @@ done
 
 echo "PostgreSQL started"
 
-python3 app.py db_create
+if [ -z "$DOCKER_ENV" ];
+then
+  python3 app.py db_create;
+else
+  python3 app.py -c "$DOCKER_ENV" db_create;
+fi
 
 exec "$@"
