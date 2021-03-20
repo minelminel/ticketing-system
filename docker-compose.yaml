@@ -95,7 +95,8 @@ services:
       app: "ticketing-system"
       description: "Jira clone"
     environment:
-      GF_LOG_LEVEL: "error"
+      GF_LOG_LEVEL: "info"
+      GF_INSTALL_PLUGINS: "grafana-piechart-panel"
     volumes:
       - "./grafana/dashboards/:/etc/dashboards/"
     networks:
