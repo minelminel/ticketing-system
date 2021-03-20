@@ -10,7 +10,7 @@ services:
     ports:
       - 3000:3000
     volumes:
-      - "./ui:/src/"
+      - "./ui:/src/" # enable hot reload
     labels:
       app: "ticketing-system"
       description: "Jira clone"
@@ -19,6 +19,7 @@ services:
     environment:
       CHOKIDAR_USEPOLLING: "true"
       REACT_APP_ENVIRONMENT: "docker"
+      NODE_ENV: "docker"
     networks:
       - default
   api:
@@ -38,7 +39,7 @@ services:
       FLASK_ENV: "docker"
       # https://testdriven.io/blog/dockerizing-flask-with-postgres-gunicorn-and-nginx/
       SQL_HOST: "db"  # wait for services
-      SQL_PORT: 5432  # wait for services
+      SQL_PORT: "5432"  # wait for services
     depends_on:
       - db
     networks:
@@ -56,9 +57,30 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data/
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      # - POSTGRES_DB=default
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "postgres"
+      # POSTGRES_DB: "default"
+    networks:
+      - default
+  pgadmin:
+    build:
+      context: ./pgadmin
+      dockerfile: Dockerfile.dev
+    image: ticketing-system-pgadmin
+    ports:
+      - 5050:5050
+    depends_on:
+      - db
+    labels:
+      app: "ticketing-system"
+      description: "Jira clone"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin/
+    environment:
+      PGADMIN_DEFAULT_EMAIL: "admin"
+      PGADMIN_DEFAULT_PASSWORD: "admin"
+      PGADMIN_LISTEN_PORT: "5050"
+      # SCRIPT_NAME: "/pgadmin"  # same as X-Script-Name
     networks:
       - default
   grafana:
@@ -73,6 +95,8 @@ services:
     labels:
       app: "ticketing-system"
       description: "Jira clone"
+    environment:
+      GF_LOG_LEVEL: "error"
     volumes:
       - "./grafana/dashboards/:/etc/dashboards/"
     networks:
@@ -83,10 +107,11 @@ services:
       dockerfile: Dockerfile.dev
     image: ticketing-system-proxy
     ports:
-      - 8888:80
+      - 8080:80
     depends_on:
       - ui
       - api
+      - pgadmin
       - grafana
     labels:
       app: "ticketing-system"
@@ -97,3 +122,4 @@ networks:
   default:
 volumes:
   postgres_data:
+  pgadmin_data:

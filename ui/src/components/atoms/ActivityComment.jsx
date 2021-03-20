@@ -1,5 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
+import MDEditor from '@uiw/react-md-editor';
 
 import { formatTimestamp } from '../../Utils';
 
@@ -34,7 +35,7 @@ export default function ActivityComment(props) {
       >{`${created_by} added a ${activity_type} - ${formatTimestamp(
         created_at,
       )}`}</span>
-      <p className="mt-1">{activity_text}</p>
+      <MDEditor.Markdown source={activity_text} />
     </Decorated>
   );
 }
