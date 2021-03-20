@@ -96,7 +96,7 @@ def create_app(script_info):
             "docker": DockerConfig,
             "production": ProductionConfig,
         }
-        if hasattr(script_info, "configuration"):
+        if hasattr(script_info, "configuration") and script_info.configuration:
             src = "cli"
             env = script_info.configuration
         elif os.getenv(ENV_VAR_KEY, ENV_VAR_VAL):
@@ -109,6 +109,7 @@ def create_app(script_info):
             )
         config = options[env]
         app.config.from_object(config)
+        app.config.update(dict(CONFIG_SOURCE=src))
         return app
 
     def configure_logging(app):
@@ -564,7 +565,7 @@ def activity_route():
 @click.option(
     "-c",
     "--configuration",
-    default="development",
+    # default="development", # check envvar before providing default
     type=click.Choice(["development", "docker", "testing", "production"]),
 )
 @pass_script_info
