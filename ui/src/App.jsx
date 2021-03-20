@@ -15,6 +15,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import './static/css/style.css';
 
 import { APP_NAME, API_ROOT, ENV } from './Constants';
+import { request } from './Requests';
 import Page from './components/pages/Page';
 import IssueDetail from './components/pages/IssueDetail';
 import IssueTable from './components/pages/IssueTable';
@@ -24,17 +25,13 @@ import IssueForm from './components/pages/IssueForm';
 
 console.log(`ENV: ${ENV}`);
 
-function getIssues() {
-  return fetch(`${API_ROOT}/issues`).then((response) => response.json());
-}
-
 export default function App() {
   const [user, setUser] = useState(`adam@example.com`);
   const [issues, setIssues] = useState([]);
 
   useEffect(() => {
     let mounted = true;
-    getIssues().then((issues) => {
+    request({ route: '/issues', method: 'GET' }).then((issues) => {
       if (mounted) {
         setIssues(issues);
       }

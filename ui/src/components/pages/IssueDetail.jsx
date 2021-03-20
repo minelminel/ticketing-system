@@ -1,12 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import Issue from '../molecules/Issue';
-import { API_ROOT } from '../../Constants';
 
-function getIssue(issue_name) {
-  return fetch(`${API_ROOT}/issues/${issue_name}`).then((response) =>
-    response.json(),
-  );
-}
+import { request } from '../../Requests';
+import Issue from '../molecules/Issue';
 
 export default function IssueDetail(props) {
   const { issue_name } = props;
@@ -14,7 +9,7 @@ export default function IssueDetail(props) {
 
   useEffect(() => {
     let mounted = true;
-    getIssue(issue_name).then((issue) => {
+    request({ route: `/issues/${issue_name}`, method: 'GET' }).then((issue) => {
       if (mounted) {
         setIssue(issue);
       }

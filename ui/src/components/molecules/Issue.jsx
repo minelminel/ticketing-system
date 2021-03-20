@@ -20,6 +20,7 @@ function TitlePanel(props) {
   /*
    * User is able to navigate to project page, view the ticket name,
    * title/summary, and click an icon to copy a permalink to clipboard.
+   * TODO: use existing ToastNotification component here.
    */
   const [showToast, setShowToast] = useState(false);
   const [copiedSuccessfully, setCopiedSuccessfully] = useState(false);
@@ -43,40 +44,34 @@ function TitlePanel(props) {
   };
 
   return (
-    <React.Fragment>
-      <span>
-        <Toast
-          style={toastStyle}
-          show={showToast}
-          onClose={toggleShowToast}
-          delay={2000}
-          autohide
+    <div style={{ position: 'relative' }}>
+      <Toast
+        style={toastStyle}
+        show={showToast}
+        onClose={toggleShowToast}
+        delay={2000}
+        autohide
+      >
+        <Toast.Header>
+          <img src="holder.js/20x20?text=%20" className="rounded mr-2" alt="" />
+          <strong className="mr-auto">Copy to clipboard</strong>
+        </Toast.Header>
+        <Toast.Body>
+          {copiedSuccessfully ? 'Success!' : 'Something went wrong'}
+        </Toast.Body>
+      </Toast>
+      <h3>
+        <IssueNameLink {...props} />
+        <Icon
+          onClick={() => handleOnClick()}
+          title={`Copy link to clipboard`}
+          style={{ marginLeft: '1rem', cursor: 'copy' }}
         >
-          <Toast.Header>
-            <img
-              src="holder.js/20x20?text=%20"
-              className="rounded mr-2"
-              alt=""
-            />
-            <strong className="mr-auto">Copy to clipboard</strong>
-          </Toast.Header>
-          <Toast.Body>
-            {copiedSuccessfully ? 'Success!' : 'Something went wrong'}
-          </Toast.Body>
-        </Toast>
-        <h3>
-          <IssueNameLink {...props} />
-          <Icon
-            onClick={() => handleOnClick()}
-            title={`Copy link to clipboard`}
-            style={{ marginLeft: '1rem', cursor: 'copy' }}
-          >
-            link
-          </Icon>
-        </h3>
-        <h1>{issue_summary}</h1>
-      </span>
-    </React.Fragment>
+          link
+        </Icon>
+      </h3>
+      <h1>{issue_summary}</h1>
+    </div>
   );
 }
 

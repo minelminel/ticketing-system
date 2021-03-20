@@ -4,13 +4,13 @@ import { API_ROOT } from './Constants';
 export async function request(options) {
   const route = options.route ? options.route : '';
   const method = options.method ? options.method.toUpperCase() : 'GET';
-  const body = options.body ? options.body : {};
+  const body = options.body ? options.body : null;
   const params = options.params
     ? new URLSearchParams(options.params).toString()
     : '';
   // Default options are marked with *
   const url = params ? `${API_ROOT}${route}?${params}` : `${API_ROOT}${route}`;
-  console.log(`url=${url} method=${method}`);
+  console.log(`[request:send] url=${url} method=${method}`);
   const response = await fetch(url, {
     // *GET, POST, PUT, DELETE, etc.
     method: method,
@@ -28,8 +28,12 @@ export async function request(options) {
     // no-referrer, *no-referrer-when-downgrade, origin, origin-when-cross-origin, same-origin, strict-origin, strict-origin-when-cross-origin, unsafe-url
     referrerPolicy: 'no-referrer',
     // body data type must match "Content-Type" header
-    body: JSON.stringify(body),
+    // body: JSON.stringify(body),
+    ...(body && { body: JSON.stringify(body) }),
   });
   // parses JSON response into native JavaScript objects
+  console.log(
+    `[request:recv] url=${url} method=${method} status=${response.status}`,
+  );
   return response.json();
 }

@@ -488,6 +488,7 @@ def activity_route():
 
 
 ## CLI
+# `add_default_commands=False` omits: run_command, shell_command, routes_command
 @click.group(cls=FlaskGroup, create_app=create_app)
 @click.option(
     "-c",
