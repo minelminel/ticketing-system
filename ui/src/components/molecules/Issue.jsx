@@ -6,7 +6,7 @@ import Table from 'react-bootstrap/Table';
 import styled from 'styled-components';
 
 import IssueNameLink from '../atoms/IssueNameLink';
-import ActivityComment from '../atoms/ActivityComment';
+import ActivityItem from '../atoms/ActivityItem';
 import { formatTimestamp, copyToClipboard } from '../../Utils';
 
 const Summary = styled.summary`
@@ -183,7 +183,7 @@ function ActivityPanel(props) {
       <Summary>Activity</Summary>
       <ul style={{ paddingLeft: '0', paddingBottom: '0.5rem' }}>
         {activity?.map((a) => (
-          <ActivityComment key={uuidv4()} {...a} />
+          <ActivityItem key={uuidv4()} {...a} />
         ))}
       </ul>
     </details>

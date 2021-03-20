@@ -4,14 +4,6 @@ import MDEditor from '@uiw/react-md-editor';
 
 import { formatTimestamp } from '../../Utils';
 
-/*
- * Typically this component would not be used directly,
- * and instead would be conditionally used by a generic
- * `ActivityComponent` determined by the `activity_type`
- *
- * TODO: ^^
- */
-
 const defaultProps = {};
 
 const Decorated = styled.li`
@@ -26,18 +18,20 @@ const Decorated = styled.li`
   background-color: #f2f2f2;
 `;
 
-export default function ActivityComment(props) {
+export default function ActivityItem(props) {
   const { created_by, activity_type, created_at, activity_text } = props;
+  const vowel =
+    ['A', 'E', 'I', 'O', 'U'].indexOf(activity_type.substring(0, 1)) > -1;
   return (
     <Decorated>
       <span
         style={{ fontWeight: 300, fontSize: '1.05rem' }}
-      >{`${created_by} added a ${activity_type} - ${formatTimestamp(
-        created_at,
-      )}`}</span>
+      >{`${created_by} added a${
+        vowel ? 'n' : ''
+      } ${activity_type} - ${formatTimestamp(created_at)}`}</span>
       <MDEditor.Markdown source={activity_text} />
     </Decorated>
   );
 }
 
-ActivityComment.defaultProps = defaultProps;
+ActivityItem.defaultProps = defaultProps;
