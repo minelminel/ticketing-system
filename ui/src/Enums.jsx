@@ -76,3 +76,9 @@ export const _IssueResolutionEnum = Enum({
   DUPLICATE: 6,
   COMPLETE: 7,
 });
+
+export const _ActivityTypeEnum = Enum({
+  UNKNOWN: 0,
+  COMMENT: 1,
+  UPDATE: 2,
+});

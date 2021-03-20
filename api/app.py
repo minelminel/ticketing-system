@@ -5,7 +5,7 @@ TODO:
 - use flask.cli.AppGroup for db subcommands
 - use foreign key for user fields rather than static string
 """
-import os, sys, json, time, datetime, logging
+import os, sys, json, time, datetime, logging, traceback
 from enum import Enum
 from itertools import chain
 
@@ -71,7 +71,7 @@ class DockerConfig(BaseConfig):
     ENV = "docker"
     DEBUG = False
     # dialect+driver://username:password@host:port/database
-    SQLALCHEMY_DATABASE_URI = f"postgresql://postgres:postgres@localhost:5432"
+    SQLALCHEMY_DATABASE_URI = f"postgresql://postgres:postgres@db:5432"
 
 
 class ProductionConfig(BaseConfig):
@@ -159,6 +159,7 @@ def create_app(script_info):
     @app.errorhandler(Exception)
     def handle_exception(e):
         log.error(e)
+        log.error(traceback.print_exc())
         return Reply.exception(message=str(e))
 
     @app.before_request
@@ -306,9 +307,10 @@ class IssueResolutionEnum(ExtendedEnum):
 class ActivityTypeEnum(ExtendedEnum):
     UNKNOWN = 0
     COMMENT = 1
-    ASSIGNMENT = 2
-    STATUS = 3
-    RESOLUTION = 4
+    UPDATE = 2
+    # ASSIGNMENT = 2
+    # STATUS = 3
+    # RESOLUTION = 4
 
 
 ## MODELS
@@ -382,6 +384,10 @@ class ActivitySchema(BaseSchema):
     class Meta(BaseSchema.Meta):
         model = ActivityModel
 
+    id = fields.Int(dump_only=True)
+    created_at = fields.Int(dump_only=True)
+    updated_at = fields.Int(dump_only=True)
+    created_by = fields.Str(required=True, allow_none=False)
     issue_id = fields.Int(required=True)
     issues = fields.Int(load_only=True)  # not sure about this..
     activity_type = fields.Str(
@@ -460,13 +466,78 @@ def issues_route():
         return Reply.success(IssueSchema().dump(obj))
 
 
-@bp.route("/issues/<string:issue_name>", methods=["GET"])
+@bp.route("/issues/<string:issue_name>", methods=["GET", "PUT"])
 def issue_route(issue_name):
-    try:
-        result = db.session.query(IssueModel).filter_by(issue_name=issue_name).one()
-        return Reply.success(data=IssueSchema().dump(result))
-    except NoResultFound as exc:
-        return Reply.missing(message=f"Invalid issue name: {issue_name}")
+    if request.method == "GET":
+        try:
+            result = db.session.query(IssueModel).filter_by(issue_name=issue_name).one()
+            return Reply.success(data=IssueSchema().dump(result))
+        except NoResultFound as exc:
+            return Reply.missing(message=f"Invalid issue name: {issue_name}")
+    # Updates are made by sending the entire updated object,
+    # and a diff is performed on the editable keys which leads
+    # to the creation of 'update' activity entries.
+    # The entire updated object is then returned.
+
+    # IMPORTANT: there is no currently implemented way of getting the
+    # username of the person updating the entry. For now it is hardcoded
+    # in order to satisfy the schema constraints, in the future this will
+    # come from the JWT/Session in some form based on who is logged in.
+    elif request.method == "PUT":
+        USER_NAME = "hardcoded@example.com"
+        editable = [
+            "issue_affected_version",
+            "issue_assigned_to",
+            "issue_description",
+            "issue_fixed_version",
+            "issue_priority",
+            "issue_resolution",
+            "issue_status",
+            "issue_story_points",
+            "issue_summary",
+            "issue_type",
+        ]
+        # Grab the entry we are attempting to update, if it doesn't exist
+        # throw a Missing error
+        try:
+            existing = (
+                db.session.query(IssueModel).filter_by(issue_name=issue_name).one()
+            )
+        except NoResultFound as exc:
+            return Reply.missing(message=f"Invalid issue name: {issue_name}")
+        # Deserialize the incoming object, perform initial validation
+        incoming = IssueSchema(only=editable).load(request.get_json())
+        # Perform a diff on the list of editable keys
+        changes = {}  # key: {new: new, old: old}
+        for key in editable:
+            old = getattr(existing, key)
+            new = getattr(incoming, key)
+            if old != new:
+                changes.update({key: dict(old=old, new=new)})
+                log.info(
+                    f"Updating issue_name={issue_name} key={key} old={old} new={new}"
+                )
+                setattr(existing, key, new)
+        if not changes:
+            return Reply.success(message=f"No changes made to issue: {issue_name}")
+        db.session.commit()
+        # Create an Update Activity recording our changes. Wrap the text in ticks
+        # such that it can be nicely displayed in Markdown.
+        activity_text = tabulate(
+            [(key, val["old"], val["new"]) for key, val in changes.items()],
+            headers=["Setting", "From", "To"],
+        )
+        activity = ActivitySchema().load(
+            dict(
+                created_by=USER_NAME,
+                issue_id=existing.id,
+                activity_type=ActivityTypeEnum.UPDATE.name,
+                activity_text=f"```\n{activity_text}\n```",
+            )
+        )
+        db.session.add(activity)
+        db.session.commit()
+        return Reply.success(ActivitySchema().dump(activity))
 
 
 @bp.route("/activity", methods=["GET", "POST"])
@@ -513,7 +584,6 @@ def cli_db_create():
     """Create all tables"""
     log.info("Creating database...")
     db.create_all()
-    db.session.commit()
     log.info("OK")
 
 
@@ -522,8 +592,9 @@ def cli_db_drop():
     """Drops all tables"""
     log.info("Dropping database...")
     db.drop_all()
-    db.create_all()
     db.session.commit()
+    log.info("Creating empty database...")
+    db.create_all()
     log.info("OK")
 
 
