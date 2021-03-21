@@ -20,6 +20,10 @@ iframe {
     width: 100vw;
 }
 
+nav {
+    max-height: 3rem;
+}
+
 .full-height {
     min-height: calc(100vh - 63px);
     height: calc(100vh - 63px);

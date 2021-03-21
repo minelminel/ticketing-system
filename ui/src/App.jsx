@@ -12,6 +12,7 @@ import Navbar from 'react-bootstrap/Navbar';
 import NavItem from 'react-bootstrap/NavItem';
 import Button from 'react-bootstrap/Button';
 import 'bootstrap/dist/css/bootstrap.min.css';
+import './static/css/theme.min.css';
 import './static/css/style.css';
 
 import { APP_NAME, ENV, ROUTES } from './Constants';
