@@ -28,6 +28,7 @@ Jira-inspired issue & ticket tracker. Current features include new issue creatio
 
 ### Roadmap
 
+- Full-featured search capability
 - Differentiate between types of Activity updates, track `field`, `old_value`, `new_value` as columns
 - Generate and view a detailed flow diagram for individual issues showing changes over time
 - Back token authentication with Redis store using auto-expire keys
@@ -168,6 +169,8 @@ Jira-inspired issue & ticket tracker. Current features include new issue creatio
 ### TODO
 - use url params in /issues table to set view (closed/open issues, pageNo, rowsPerPage)
 - add `links` object to response which returns pagination params and issue url
+- issue detail panel shows empty component on 404 (in general this rendering pattern needs to improve)
+- activity stream on home page when logged in, toggle "everyone" or "only me"
 
 ---
 

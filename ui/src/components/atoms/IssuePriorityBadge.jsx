@@ -7,11 +7,11 @@ const defaultProps = {
 
 function getVariant(issue_priority) {
   const colors = {
-    1: 'danger',
-    2: 'warning',
-    3: 'primary',
-    4: 'info',
-    5: 'secondary',
+    1: 'var(--red)',
+    2: 'var(--yellow)',
+    3: 'var(--green)',
+    4: 'var(--cyan)',
+    5: 'var(--purple)',
   };
   return colors[issue_priority];
 }
@@ -21,7 +21,13 @@ export default function IssuePriorityBadge(props) {
   return (
     <Badge
       title={`Issue Priority: ${issue_priority}`}
-      style={props.style}
+      style={{
+        ...props.style,
+        ...{
+          backgroundColor: getVariant(issue_priority),
+          color: 'var(--light)',
+        },
+      }}
       variant={getVariant(issue_priority)}
     >
       {issue_priority}

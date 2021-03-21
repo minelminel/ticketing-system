@@ -12,7 +12,7 @@ import Navbar from 'react-bootstrap/Navbar';
 import NavItem from 'react-bootstrap/NavItem';
 import Button from 'react-bootstrap/Button';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import './static/css/theme.min.css';
+// import './static/css/theme.min.css';
 import './static/css/style.css';
 
 import { APP_NAME, ENV, ROUTES } from './Constants';
@@ -88,7 +88,7 @@ export default function App() {
               marginTop: '20%',
               marginLeft: '25%',
               padding: '2rem',
-              boxShadow: '0 0 10px var(--secondary)',
+              boxShadow: '0 0 10px var(--gray)',
               borderRadius: '10px',
             }}
             onSuccess={(data) => handleUserLogin(data)}
