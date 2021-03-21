@@ -29,7 +29,7 @@ from itsdangerous import (
     BadSignature,
     SignatureExpired,
 )
-from flask_restful import Api, Resource
+from flask_restful import Api, Resource, reqparse
 from werkzeug.datastructures import Headers
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm.exc import NoResultFound
@@ -593,7 +593,38 @@ class IssueSchema(BaseSchema):
         return data
 
 
+## PAGINATION
+def pagination_parser():
+    """
+    This function must be called from within a valid request context,
+    ie. a route function.
+    TODO: should we return the original size & page argument values?
+    """
+    parser = reqparse.RequestParser()
+    parser.add_argument(
+        "size",
+        type=int,
+        default=10,
+        location="args",
+        help="Maximum records to return, default=10",
+    )
+    parser.add_argument(
+        "page", type=int, default=1, location="args", help="Non-zero indexed, default=1"
+    )
+    args = parser.parse_args()
+    limit = args.size
+    offset = args.page * args.size - args.size
+    return limit, offset
+
+
 ## ROUTES
+@bp.route("/")
+def index_route():
+    limit, offset = pagination_parser()
+    result = db.session.query(ActivityModel).limit(limit).offset(offset)
+    return Reply.success(data=ActivitySchema(many=True).dump(result))
+
+
 @bp.route("/issues", methods=["GET", "POST"])
 def issues_route():
     if request.method == "GET":
@@ -688,13 +719,22 @@ def issue_route(issue_name):
 
 @bp.route("/activity", methods=["GET", "POST"])
 def activity_route():
+    """
+    These records are returned DESC by default, such that we
+    can easily display the most recent records first.
+    """
     if request.method == "GET":
-        # TODO: implement pagination
         # TODO: validate params
-        params = dict(request.args)
-        query = db.session.query(ActivityModel)
-        if params:
-            query = query.filter_by(**params)
+        limit, offset = pagination_parser()
+        query = (
+            db.session.query(ActivityModel)
+            .order_by(ActivityModel.created_at.desc())
+            .limit(limit)
+            .offset(offset)
+        )
+        # params = dict(request.args)
+        # if params:
+        #     query = query.filter_by(**params)
         result = query.all()
         return Reply.success(data=ActivitySchema(many=True).dump(result))
     elif request.method == "POST":

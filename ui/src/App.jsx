@@ -11,9 +11,7 @@ import Nav from 'react-bootstrap/Nav';
 import Navbar from 'react-bootstrap/Navbar';
 import NavItem from 'react-bootstrap/NavItem';
 import Button from 'react-bootstrap/Button';
-import 'bootstrap/dist/css/bootstrap.min.css';
-// import './static/css/theme.min.css';
-import './static/css/style.css';
+import { v4 as uuidv4 } from 'uuid';
 
 import { APP_NAME, ENV, ROUTES } from './Constants';
 import { getLocalStorage, setLocalStorage, removeLocalStorage } from './Utils';
@@ -25,6 +23,7 @@ import Dashboard from './components/pages/Dashboard';
 import Metrics from './components/pages/Metrics';
 import IssueForm from './components/pages/IssueForm';
 import UserLoginForm from './components/molecules/UserLoginForm';
+import ActivityItem from './components/atoms/ActivityItem';
 
 console.log(`ENV: ${ENV}`);
 
@@ -33,7 +32,8 @@ export default function App() {
   const [user, setUser] = useState(getLocalStorage('user.username'));
   const [token, setToken] = useState(getLocalStorage('user.token'));
   // data
-  const [issues, setIssues] = useState([]);
+  const [issues, setIssues] = useState({});
+  const [activity, setActivity] = useState({});
 
   /**
    * Perform the initial loading of data from the API, using
@@ -45,6 +45,16 @@ export default function App() {
     request({ route: '/issues', method: 'GET' }).then((issues) => {
       if (mounted) {
         setIssues(issues);
+      }
+    });
+    return () => (mounted = false);
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+    request({ route: '/activity', method: 'GET' }).then((activity) => {
+      if (mounted) {
+        setActivity(activity);
       }
     });
     return () => (mounted = false);
@@ -79,7 +89,7 @@ export default function App() {
    */
   const HomeRoute = () => {
     return (
-      <Page fluid={false}>
+      <Page fluid={false} className="mt-2">
         {!token || !user ? (
           <UserLoginForm
             style={{
@@ -94,7 +104,12 @@ export default function App() {
             onSuccess={(data) => handleUserLogin(data)}
           />
         ) : (
-          <div>This is only visible when a user is logged in</div>
+          <React.Fragment>
+            <h4>Activity Stream</h4>
+            {activity.data?.map((a) => (
+              <ActivityItem key={uuidv4()} {...a} />
+            ))}
+          </React.Fragment>
         )}
       </Page>
     );
