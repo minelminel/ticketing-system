@@ -466,6 +466,12 @@ class IssueModel(BaseModel):
 
 
 class BaseSchema(ma.SQLAlchemyAutoSchema):
+    """
+    missing     used for deserialization (dump)
+    default     used for serialization (load)
+    https://github.com/marshmallow-code/marshmallow/issues/588#issuecomment-283544372
+    """
+
     class Meta:
         """Alternate method of configuration which eliminates the need to
         subclass BaseSchema.Meta
@@ -567,12 +573,12 @@ class IssueSchema(BaseSchema):
     issue_description = fields.Str(required=False, allow_none=True)
     issue_status = fields.Str(
         required=False,
-        default=IssueStatusEnum.OPEN,
+        missing=IssueStatusEnum.OPEN,
         validate=validate.OneOf(IssueStatusEnum.names()),
     )
     issue_resolution = fields.Str(
         required=False,
-        default=IssueResolutionEnum.UNRESOLVED,
+        missing=IssueResolutionEnum.UNRESOLVED.name,
         validate=validate.OneOf(IssueResolutionEnum.names()),
     )
     issue_fixed_version = fields.Str(required=False, allow_none=True)

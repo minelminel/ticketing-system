@@ -76,6 +76,7 @@ export default function IssueForm(props) {
           show={true}
           variant={response.status}
           body={<IssueNameLink {...response.data} />}
+          delay={10 * 1000}
         />
       )}
       <h4>Create Issue</h4>

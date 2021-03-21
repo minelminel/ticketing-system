@@ -131,7 +131,7 @@ export default function App() {
     );
   };
 
-  const IssuesRoute = (props) => {
+  const IssuesRoute = () => {
     const match = useRouteMatch();
     return (
       <Switch>
@@ -194,11 +194,14 @@ export default function App() {
             </NavItem>
           </Nav>
           {/* This is super janky and just a temporary way to visibly check when credentials are persisted */}
-          <NavItem style={{ color: 'var(--light)' }} className="mr-3">
+          <NavItem
+            style={{ color: 'var(--light)', fontStyle: 'italic' }}
+            className="mr-3"
+          >
             <span className="mr-3">{user ? `${user}` : '(no user)'}</span>
-            <span className="mr-3">
+            {/* <span className="mr-3" title={token}>
               {token ? `${token.substring(0, 10)}...` : '(no token)'}
-            </span>
+            </span> */}
           </NavItem>
           {/* End janky horribleness */}
           <NavItem href={ROUTES.HOME}>
