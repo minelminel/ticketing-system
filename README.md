@@ -28,6 +28,8 @@ Jira-inspired issue & ticket tracker. Current features include new issue creatio
 
 ### Roadmap
 
+- Differentiate between types of Activity updates, track `field`, `old_value`, `new_value` as columns
+- Generate and view a detailed flow diagram for individual issues showing changes over time
 - Back token authentication with Redis store using auto-expire keys
 - Convert database Models to entirely integer-based Enums with auto de/serialization within Schemas, generate corresponding JS client Enums
 - OpenAPI-compliant backend with Swagger documentation for routes and models
@@ -69,7 +71,7 @@ Jira-inspired issue & ticket tracker. Current features include new issue creatio
 | updated_on | `bigint` |  |
 | created_by | `string` |  |
 | issue_id | `int` |  |
-| issue_name | `string` | ** TODO ** |
+| issue_name | `string` |  |
 | activity_type | `enum` | COMMENT, ASSIGNMENT, STATUS, RESOLUTION |
 | activity_text | `string` |  |
 
@@ -84,8 +86,8 @@ Jira-inspired issue & ticket tracker. Current features include new issue creatio
 | updated_on | `bigint` |  |
 | username | `string` |  |
 | password | `hash[string]` |  |
+| user_type | `string` | ADMIN, USER |
 | user_email | `string` | ** TODO ** |
-| user_type | `string` | ** TODO ** ADMIN, USER |
 
 ---
 

@@ -11,6 +11,7 @@ from enum import Enum
 from itertools import chain
 
 from tabulate import tabulate
+from dotenv import load_dotenv
 import click
 from flask.cli import FlaskGroup, pass_script_info
 from flask import (
@@ -47,6 +48,7 @@ from passlib.apps import custom_app_context as password_context
 
 log = logging.getLogger(__name__)
 here = os.path.dirname(os.path.abspath(__file__))
+load_dotenv()
 
 ENV_VAR_KEY = "FLASK_ENV"
 ENV_VAR_VAL = "development"
@@ -54,11 +56,13 @@ os.environ.setdefault(ENV_VAR_KEY, ENV_VAR_VAL)
 
 
 class BaseConfig:
+    NAME = "Ticketing System"
     ENV = None
     TESTING = False
     DEBUG = False
     LOG_FILE = None
     LOG_LEVEL = "INFO"
+    AUTHENTICATION = True
     THROTTLE_MS = 0
     SECRET_KEY = "begaydocrime"
     SQLALCHEMY_DATABASE_URI = "sqlite:///database.db"
@@ -78,7 +82,6 @@ class TestingConfig(BaseConfig):
 class DevelopmentConfig(BaseConfig):
     ENV = "development"
     DEBUG = True
-    THROTTLE_MS = 100
 
 
 class DockerConfig(BaseConfig):
@@ -169,7 +172,6 @@ def create_app(script_info):
     ## HANDLERS
     @auth.error_handler
     def handle_auth_error(e):
-        log.error(e)
         return Reply.unauthorized(message="Invalid or expired credentials")
 
     @app.errorhandler(404)
@@ -191,9 +193,10 @@ def create_app(script_info):
     @app.before_request
     def before_request():
         """
-        this timestamp is read before returning the response and
+        This timestamp is read before returning the response and
         allows us to track how long the request was processed for.
         NOTE: this may remove immutability in subsequent handling
+        TODO: add timestamp with Nginx proxy_set_header directive
         """
         headers = Headers(
             [(app.config["TS_TIMER_HEADER_START"], make_time()), *request.headers]
@@ -219,6 +222,9 @@ def verify_password(username_or_token, password):
     """
     Decorate protected routes using @auth.verify_password
     """
+    if not current_app.config.get("AUTHENTICATION", True):
+        log.warning(f"Authentication disabled, bypassing verification!")
+        return True
     log.info(f"Trying token authentication: {username_or_token}")
     user = UserModel.verify_auth_token(username_or_token)
     if not user:
@@ -337,6 +343,7 @@ class IssueTypeEnum(ExtendedEnum):
     REQUIREMENT = 4
     SUPPORT = 5
     EPIC = 6
+    # IMPROVEMENT = 7
 
 
 class IssueStatusEnum(ExtendedEnum):
@@ -370,6 +377,12 @@ class ActivityTypeEnum(ExtendedEnum):
     # RESOLUTION = 4
 
 
+class UserTypeEnum(ExtendedEnum):
+    UNKNOWN = 0
+    ADMIN = 1
+    USER = 2
+
+
 ## MODELS
 class BaseModel(db.Model):
     __abstract__ = True
@@ -383,11 +396,13 @@ class BaseModel(db.Model):
 class UserModel(BaseModel):
     __tablename__ = "users"
 
-    username = db.Column(db.String(32), index=True)
+    username = db.Column(db.String(32), unique=True, nullable=False)
     password = db.Column(db.String(128))
+    user_type = db.Column(
+        db.String(), nullable=False, unique=False, default=UserTypeEnum.USER.name
+    )
 
     def hash_password(self, password):
-        print(f"Hashing Password: {password}")
         self.password = password_context.encrypt(password)
 
     def verify_password(self, password):
@@ -415,6 +430,7 @@ class ActivityModel(BaseModel):
     # __table__args__ = (db.ForeignKeyConstraint(["issue_id"], ["issues.id"]))
     created_by = db.Column(db.String(), nullable=False)
     issue_id = db.Column(db.Integer(), db.ForeignKey("issues.id"), nullable=False)
+    issue_name = db.Column(db.String(), nullable=False)
     activity_type = db.Column(db.String(), nullable=False)
     activity_text = db.Column(db.String(), nullable=True)
 
@@ -478,8 +494,12 @@ class UserSchema(BaseSchema):
         required=True, allow_none=False, validate=validate.Length(max=32)
     )
     password = fields.Str(
-        required=True, allow_none=False, validate=validate.Length(max=128)
+        load_only=True,
+        required=True,
+        allow_none=False,
+        validate=validate.Length(max=128),
     )
+    user_type = fields.Str(dump_only=True)
 
 
 class ActivitySchema(BaseSchema):
@@ -491,6 +511,7 @@ class ActivitySchema(BaseSchema):
     updated_at = fields.Int(dump_only=True)
     created_by = fields.Str(required=True, allow_none=False)
     issue_id = fields.Int(required=True)
+    issue_name = fields.Str(dump_only=True)
     issues = fields.Int(load_only=True)  # not sure about this..
     activity_type = fields.Str(
         required=True, validate=validate.OneOf(ActivityTypeEnum.names())
@@ -508,6 +529,11 @@ class ActivitySchema(BaseSchema):
     @post_load
     def post_load(self, data, **kwargs):
         # TODO: generate activity_text for non-comment updates
+        # TODO: grab this value using the foreign key directly in the model
+        issue_name = getattr(data, "issue_name", None)
+        if not issue_name:
+            issue = db.session.query(IssueModel).filter_by(id=data.issue_id).first()
+            data.issue_name = issue.issue_name
         return data
 
 
@@ -660,25 +686,26 @@ def activity_route():
         return Reply.success(ActivitySchema().dump(obj))
 
 
+@bp.route("/users", methods=["GET"])
+def users_route():
+    result = db.session.query(UserModel).all()
+    return Reply.success(UserSchema(many=True).dump(result))
+
+
 @bp.route("/auth/register", methods=["POST"])
 def auth_register_route():
     # Register new users
     # TODO: use database constraints to determine collision automatically
-    username = request.get_json().get("username")
-    password = request.get_json().get("password")
-
-    if username is None or password is None:
-        return Reply.error(message="Missing username and/or password")
-
-    if db.session.query(UserModel).filter_by(username=username).first() is not None:
-        return Reply.error(message="Username already exists")
-
-    user = UserModel(username=username)
-    user.hash_password(password)
+    user = UserSchema().load(request.get_json())
+    user.hash_password(user.password)
     db.session.add(user)
     db.session.commit()
-    log.info(f"Created new user: {username}")
-    return Reply.success(message=f"Welcome aboard, {username}")
+    log.info(f"Created new user: {user.username}")
+    return Reply.success(
+        data=dict(
+            username=user.username, token=user.generate_auth_token().decode("ascii")
+        )
+    )
 
 
 @bp.route("/auth/token", methods=["GET"])
@@ -725,7 +752,12 @@ def cli(script_info, configuration):
 @cli.command("settings")
 def cli_settings():
     """Show environment configuration settings."""
-    print(tabulate(list(current_app.config.items()), headers=["Parameter", "Setting"]))
+    print(
+        tabulate(
+            sorted(current_app.config.items(), key=lambda x: x[0]),
+            headers=["Parameter", "Setting"],
+        )
+    )
 
 
 @cli.command("db_create")
@@ -751,18 +783,34 @@ def cli_db_drop():
 def cli_db_seed():
     """Injects mock data into tables"""
     log.info("Seeding database...")
+    log.info(f"Writing table: {UserModel.__tablename__}")
+    with open(os.path.join(here, "data", "users.json"), "r") as file:
+        users = json.load(file)
+    for each in users:
+        # bypass the Schema to allow setting `user_type`
+        kwargs = {}
+        for key in ["username", "password", "user_type"]:
+            kwargs.update({key: each[key]})
+        db.session.add(UserModel(**kwargs))
+        db.session.commit()
+    log.info(f"Wrote {len(users)} rows to table: {UserModel.__tablename__}")
+
     log.info(f"Writing table: {IssueModel.__tablename__}")
     with open(os.path.join(here, "data", "issues.json"), "r") as file:
         issues = json.load(file)
     for each in issues:
         db.session.add(IssueSchema().load(each))
         db.session.commit()
+    log.info(f"Wrote {len(issues)} rows to table: {IssueModel.__tablename__}")
+
     log.info(f"Writing table: {ActivityModel.__tablename__}")
     with open(os.path.join(here, "data", "activity.json"), "r") as file:
         activity = json.load(file)
     for each in activity:
         db.session.add(ActivitySchema().load(each))
         db.session.commit()
+    log.info(f"Wrote {len(activity)} rows to table: {ActivityModel.__tablename__}")
+
     log.info("OK")
 
 

@@ -1,0 +1,8 @@
+[
+    {
+        "username": "admin",
+        "password": "$6$rounds=656000$wJyMc2Z56FXv2fnn$aozSGCgM0ETbmt/9YpmqIOgaaxcH4mEALtKlD9925Xi6v3Ap6i6hkiK7/1Pvt3AmLTmlLs4NfLXvY6fTd9qXd/",
+        "user_type": "ADMIN",
+        "plaintext": "admin"
+    }
+]
