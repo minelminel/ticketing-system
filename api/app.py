@@ -68,8 +68,8 @@ class BaseConfig:
     SQLALCHEMY_DATABASE_URI = "sqlite:///database.db"
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     TS_ISSUE_NUMBER_PADDING = 4
-    TS_TIMER_HEADER_START = "X-TIME-RECEIVED"
-    TS_TIMER_HEADER_STOP = "X-TIME-COMPLETED"
+    TS_TIMER_HEADER_START = "X-Start-Time"
+    TS_TIMER_HEADER_STOP = "X-End-Time"
 
 
 class TestingConfig(BaseConfig):
@@ -193,16 +193,8 @@ def create_app(script_info):
     @app.before_request
     def before_request():
         """
-        This timestamp is read before returning the response and
-        allows us to track how long the request was processed for.
-        NOTE: this may remove immutability in subsequent handling
-        TODO: add timestamp with Nginx proxy_set_header directive
-        """
-        headers = Headers(
-            [(app.config["TS_TIMER_HEADER_START"], make_time()), *request.headers]
-        )
-        request.headers = headers
         # If throttling is enabled, add MS deadlock to each request.
+        """
         if app.config.get("THROTTLE_MS", 0):
             time.sleep(app.config["THROTTLE_MS"] / 1000)
 
@@ -263,10 +255,12 @@ class Reply(object):
 
     @staticmethod
     def get_duration():
+        # Start time header is set by Nginx and thus unavailable running standalone
         with current_app.app_context() as ctx:
-            now = make_time()
-            request.headers[ctx.app.config["TS_TIMER_HEADER_STOP"]] = now
-            return now - request.headers[ctx.app.config["TS_TIMER_HEADER_START"]]
+            header = request.headers.get(ctx.app.config["TS_TIMER_HEADER_START"])
+        if not header:
+            return None
+        return int((time.time() - float(header)) * 1000)
 
     @classmethod
     def _base_reply(
@@ -571,7 +565,8 @@ class IssueSchema(BaseSchema):
 
     @post_load
     def post_load(self, data, **kwargs):
-        data.issue_name = create_issue_name(data.issue_project)
+        if not data.issue_name:
+            data.issue_name = create_issue_name(data.issue_project)
         return data
 
 
