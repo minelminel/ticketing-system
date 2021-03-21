@@ -1,4 +1,4 @@
-# Ticketing System
+# TIX 🗳 Ticketing System
 
 ### Overview
 

@@ -56,7 +56,7 @@ os.environ.setdefault(ENV_VAR_KEY, ENV_VAR_VAL)
 
 
 class BaseConfig:
-    NAME = "Ticketing System"
+    NAME = "TIX"
     ENV = None
     TESTING = False
     DEBUG = False

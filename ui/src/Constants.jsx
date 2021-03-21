@@ -4,7 +4,7 @@
  * This is the name of the app as it will appear in the Navbar,
  * popup messages, etc..
  */
-export const APP_NAME = `Ticketing System`;
+export const APP_NAME = `🗳 TIX`;
 
 /**
  * Main flag for configuration of environment-conditional settings.
