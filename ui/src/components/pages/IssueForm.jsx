@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import Form from 'react-bootstrap/Form';
 import Button from 'react-bootstrap/Button';
 import styled, { css } from 'styled-components';
+import MEDitor from '@uiw/react-md-editor';
 
 import { request } from '../../Requests';
 import ToastNotification from '../atoms/ToastNotification';
@@ -46,7 +47,15 @@ export default function IssueForm(props) {
   // response body is set under the .data property
   const [response, setResponse] = useState({});
 
-  const { register, handleSubmit, setValue, reset, errors } = useForm({
+  const {
+    register,
+    handleSubmit,
+    getValues,
+    setValue,
+    watch,
+    reset,
+    errors,
+  } = useForm({
     defaultValues: {
       created_by: user, // hidden
       issue_status: 'OPEN', // hidden
@@ -212,13 +221,20 @@ export default function IssueForm(props) {
           />
         </Form.Group>
         <Form.Group>
-          <StyledLabel>Description</StyledLabel>
+          <StyledLabel>Description [Markdown editing enabled]</StyledLabel>
           <Form.Control
             name="issue_description"
             size="sm"
             as="textarea"
-            rows={2}
+            rows={3}
             ref={register}
+            hidden
+          />
+          {/* There must be a better way to do this, but it works */}
+          <MEDitor
+            height={100}
+            value={''} // this must be set or render fails
+            onChange={(e) => setValue('issue_description', e)}
           />
         </Form.Group>
         <Button variant="primary" type="submit">
