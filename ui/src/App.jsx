@@ -15,6 +15,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import './static/css/style.css';
 
 import { APP_NAME, ENV, ROUTES } from './Constants';
+import { getLocalStorage, setLocalStorage, removeLocalStorage } from './Utils';
 import { request } from './Requests';
 import Page from './components/pages/Page';
 import IssueDetail from './components/pages/IssueDetail';
@@ -28,8 +29,8 @@ console.log(`ENV: ${ENV}`);
 
 export default function App() {
   // auth
-  const [user, setUser] = useState(null);
-  const [token, setToken] = useState(null);
+  const [user, setUser] = useState(getLocalStorage('user.username'));
+  const [token, setToken] = useState(getLocalStorage('user.token'));
   // data
   const [issues, setIssues] = useState([]);
 
@@ -54,6 +55,8 @@ export default function App() {
    * this method is only called after a successful operation.
    */
   const handleUserLogin = (response) => {
+    setLocalStorage(`user.username`, response.data.username);
+    setLocalStorage(`user.token`, response.data.token);
     setUser(response.data.username);
     setToken(response.data.token);
   };
@@ -62,6 +65,8 @@ export default function App() {
     // prompt for confirmation
     const confirmed = window.confirm(`Are you sure you want to log out?`);
     if (confirmed) {
+      removeLocalStorage(`user.username`);
+      removeLocalStorage(`user.token`);
       setUser(null);
       setToken(null);
     }

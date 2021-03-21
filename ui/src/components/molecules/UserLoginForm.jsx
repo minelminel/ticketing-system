@@ -36,8 +36,8 @@ export default function UserLoginForm(props) {
 
   const { register, handleSubmit, setValue, reset, errors } = useForm({
     defaultValues: {
-      username: 'adam@example.com',
-      password: 'default',
+      username: 'admin',
+      password: 'admin',
     },
   });
 

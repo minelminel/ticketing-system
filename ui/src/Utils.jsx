@@ -43,3 +43,32 @@ export function formatSnakeCase(str) {
     .map((s) => s.charAt(0).toUpperCase() + s.substring(1))
     .join(' ');
 }
+
+/**
+ * Convenience functions for getting & setting localStorage
+ */
+export const getLocalStorage = (key) => {
+  console.log(`getLocalStorage: getting key=${key}`);
+  const value = window.localStorage.getItem(key);
+  if (value === null) {
+    return null;
+  }
+  try {
+    return JSON.parse(value);
+  } catch (error) {
+    console.debug(error);
+    return value;
+  }
+};
+
+export const setLocalStorage = (key, val) => {
+  console.log(`setLocalStorage: saving key=${key} val=${val}`);
+  window.localStorage.setItem(key, JSON.stringify(val));
+  return true;
+};
+
+export const removeLocalStorage = (key) => {
+  console.log(`removeLocalStorage: deleting key=${key}`);
+  window.localStorage.removeItem(key);
+  return true;
+};

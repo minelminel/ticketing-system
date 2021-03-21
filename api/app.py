@@ -172,6 +172,11 @@ def create_app(script_info):
     ## HANDLERS
     @auth.error_handler
     def handle_auth_error(e):
+        """
+        Remove 'WWW-Authenticate' header from response to prevent browser
+        from intercepting the auth failure with its own login window.
+        https://stackoverflow.com/questions/9859627/how-to-prevent-browser-to-invoke-basic-auth-popup-and-handle-401-error-using-jqu
+        """
         return Reply.unauthorized(message="Invalid or expired credentials")
 
     @app.errorhandler(404)
@@ -264,9 +269,15 @@ class Reply(object):
 
     @classmethod
     def _base_reply(
-        cls, data=None, message=None, status=None, response=None, timestamp=make_time()
+        cls,
+        data=None,
+        message=None,
+        status=None,
+        response=None,
+        timestamp=make_time(),
+        headers={},
     ):
-        return make_response(
+        _response = make_response(
             jsonify(
                 data=data,
                 message=message,
@@ -277,6 +288,9 @@ class Reply(object):
             ),
             response,
         )
+        if headers:
+            _response.headers = headers
+        return _response
 
     @classmethod
     def success(cls, data=None, message=None):
@@ -303,11 +317,14 @@ class Reply(object):
     @classmethod
     def unauthorized(cls, data=None, message=None):
         return cls._base_reply(
-            data=data, message=message, status="unauthorized", response=401
+            data=data,
+            message=message,
+            status="unauthorized",
+            response=401,
+            headers={"WWW-Authenticate": ""},
         )
 
 
-## ENUMS: raise ValueError on (), AttributeError on .
 class ExtendedEnum(Enum):
     """
     MyEnum(0)

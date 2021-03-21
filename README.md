@@ -202,3 +202,16 @@ SELECT COUNT(*) FILTER (WHERE issue_type LIKE '%TASK%') AS "TASK" FROM issues;
 ### Notes
 
 - https://soshace.com/react-user-login-authentication-using-usecontext-and-usereducer/
+
+
+### Development
+```bash
+# build the container images
+docker-compose build
+# start the stack
+docker-compose up
+# prep the database (optional)
+docker-compose exec api /bin/bash
+$ python3 app.py db_drop
+$ python3 app.py db_seed
+```
