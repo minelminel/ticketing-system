@@ -24,6 +24,7 @@ import Metrics from './components/pages/Metrics';
 import IssueForm from './components/pages/IssueForm';
 import UserLoginForm from './components/molecules/UserLoginForm';
 import ActivityItem from './components/atoms/ActivityItem';
+import BreadcrumbBar from './components/atoms/BreadcrumbBar';
 
 console.log(`ENV: ${ENV}`);
 
@@ -233,6 +234,7 @@ export default function App() {
           </NavItem>
         </Navbar.Collapse>
       </Navbar>
+      <BreadcrumbBar />
       {/* A <Switch> looks through its children <Route>s and
             renders the first one that matches the current URL. */}
       <Switch>

@@ -20,7 +20,6 @@ const Decorated = styled.li`
 `;
 
 export default function ActivityItem(props) {
-  console.log(props);
   const {
     created_by,
     activity_type,

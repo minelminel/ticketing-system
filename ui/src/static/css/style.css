@@ -24,6 +24,10 @@ nav {
     max-height: 3rem;
 }
 
+.breadcrumb-item + .breadcrumb-item::before {
+    content: "> ";
+}
+
 .full-height {
     min-height: calc(100vh - 63px);
     height: calc(100vh - 63px);

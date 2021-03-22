@@ -218,3 +218,12 @@ docker-compose exec api /bin/bash
 $ python3 app.py db_drop
 $ python3 app.py db_seed
 ```
+
+```python
+# -*- Mode: python; indent-tabs-mode: nil; tab-width: 40 -*-
+# vim: set filetype=python:
+
+# Simply touch the file.
+with open(clobber_file, "a"):
+    pass
+```
