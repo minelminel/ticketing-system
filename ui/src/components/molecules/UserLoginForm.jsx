@@ -89,7 +89,7 @@ export default function UserLoginForm(props) {
           )}
         </Form.Group>
         <Button variant="primary" type="submit" size="sm">
-          Login
+          Log In
         </Button>
         {errorMessage && (
           <span className="float-right" style={{ color: 'var(--danger)' }}>
@@ -98,7 +98,9 @@ export default function UserLoginForm(props) {
         )}
       </Form>
       <br />
-      <a href="/">Not signed up? Register here</a>
+      <a href="/">
+        <small>Not signed up? Register here</small>
+      </a>
     </div>
   );
 }

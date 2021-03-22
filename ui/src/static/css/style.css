@@ -20,9 +20,9 @@ iframe {
     width: 100vw;
 }
 
-nav {
+/* nav {
     max-height: 3rem;
-}
+} */
 
 .breadcrumb-item + .breadcrumb-item::before {
     content: "> ";

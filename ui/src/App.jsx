@@ -24,7 +24,11 @@ import Metrics from './components/pages/Metrics';
 import IssueForm from './components/pages/IssueForm';
 import UserLoginForm from './components/molecules/UserLoginForm';
 import ActivityItem from './components/atoms/ActivityItem';
-import BreadcrumbBar from './components/atoms/BreadcrumbBar';
+// import BreadcrumbBar from './components/atoms/BreadcrumbBar';
+
+// jQuery must be handled separately for certain Bootstrap functionality
+import $ from 'jquery';
+window.jQuery = window.$ = $;
 
 console.log(`ENV: ${ENV}`);
 
@@ -178,10 +182,18 @@ export default function App() {
 
   return (
     <Router>
-      <Navbar bg="dark" variant="dark" className="mb-0">
+      <Navbar
+        collapseOnSelect={true}
+        // className="bs-navbar-collapse"
+        bg="dark"
+        expand="lg"
+        variant="dark"
+        className="mb-0"
+      >
         <Navbar.Brand as={Link} to={ROUTES.HOME}>
           {APP_NAME}
         </Navbar.Brand>
+        <Navbar.Toggle />
         <Navbar.Collapse>
           <Nav className="mr-auto">
             <NavItem href={ROUTES.HOME}>
@@ -212,17 +224,19 @@ export default function App() {
           </Nav>
           {/* This is super janky and just a temporary way to visibly check when credentials are persisted */}
           <NavItem
-            style={{ color: 'var(--light)', fontStyle: 'italic' }}
-            className="mr-3"
+            style={{
+              color: 'var(--light)',
+              marginRight: '2rem',
+            }}
           >
-            <span className="mr-3">{user ? `${user}` : '(no user)'}</span>
+            <span>{user ? `${user}` : 'Not logged in'}</span>
             {/* <span className="mr-3" title={token}>
               {token ? `${token.substring(0, 10)}...` : '(no token)'}
             </span> */}
           </NavItem>
           {/* End janky horribleness */}
-          <NavItem href={ROUTES.HOME}>
-            <Nav.Link as={Link} to={ROUTES.HOME}>
+          <NavItem className="pl-0" href={ROUTES.HOME}>
+            <Nav.Link className="pl-0" as={Link} to={ROUTES.HOME}>
               {user ? (
                 <Button onClick={handleUserLogout} size="sm">
                   Log Out
