@@ -8,6 +8,11 @@ import IssueItem from '../molecules/IssueItem';
 import { IssueStatusEnum } from '../../Enums';
 import { formatSnakeCase } from '../../Utils';
 
+const defaultProps = {
+  style: {},
+  statusColumns: ['ASSIGNED', 'IN_PROGRESS', 'ON_HOLD', 'UNDER_REVIEW'],
+};
+
 function groupIssuesByStatus(list, key = 'issue_status') {
   const defaults = Object.fromEntries(
     Object.keys(IssueStatusEnum).map((key) => [key, []]),
@@ -44,12 +49,17 @@ export default function Dashboard(props) {
     filterDataByUser(data, user),
     'issue_status',
   );
-  // TODO: make default props
+  // TODO: use default props
   delete groups.DONE;
   delete groups.RELEASED;
   delete groups.OPEN;
+  const dashboardIsEmpty =
+    Object.values(groups).filter(function (e) {
+      return e.length !== 0;
+    }).length === 0;
+
   return (
-    <Container fluid>
+    <Container style={props.style} fluid>
       <Row>
         {Object.entries(groups).map(([key, array]) => (
           <Col style={{ padding: '0 5 0 5' }} key={uuidv4()}>
@@ -67,6 +77,20 @@ export default function Dashboard(props) {
           </Col>
         ))}
       </Row>
+      {dashboardIsEmpty && (
+        <h2
+          style={{
+            margin: 'auto',
+            width: '50%',
+            textAlign: 'center',
+            paddingTop: '15%',
+          }}
+        >
+          Woo hoo! 🥳 You're all caught up
+        </h2>
+      )}
     </Container>
   );
 }
+
+Dashboard.defaultProps = defaultProps;

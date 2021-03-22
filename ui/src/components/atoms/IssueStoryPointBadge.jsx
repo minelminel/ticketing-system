@@ -12,6 +12,7 @@ export default function IssueStoryPointBadge(props) {
       title={`Story Points: ${issue_story_points}`}
       style={props.style}
       variant={`secondary`}
+      pill
     >
       {`${issue_story_points} pts`}
     </Badge>
